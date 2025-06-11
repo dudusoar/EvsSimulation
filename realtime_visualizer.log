@@ -32,3 +32,13 @@
 2025-06-10 18:10:03,631 - realtime_visualizer.realtime_visualizer - INFO - Real-time Visualizer started successfully
 2025-06-10 18:10:03,631 - realtime_visualizer.realtime_visualizer - INFO - Frontend available at: http://localhost:8080
 2025-06-10 18:10:03,631 - realtime_visualizer.realtime_visualizer - INFO - WebSocket server running on: ws://localhost:8765
+2025-06-11 14:45:37,719 - realtime_visualizer.realtime_visualizer - INFO - Initializing Real-time Visualizer...
+2025-06-11 14:45:37,719 - realtime_visualizer.realtime_visualizer - INFO - Initializing simulation engine...
+2025-06-11 14:45:37,999 - realtime_visualizer.realtime_visualizer - INFO - Simulation engine initialized
+2025-06-11 14:45:38,000 - realtime_visualizer.realtime_visualizer - INFO - Initializing WebSocket server...
+2025-06-11 14:45:38,000 - realtime_visualizer.realtime_visualizer - INFO - WebSocket server initialized
+2025-06-11 14:45:38,009 - realtime_visualizer.realtime_visualizer - INFO - HTTP server started on http://localhost:8080
+2025-06-11 14:45:38,009 - realtime_visualizer.realtime_visualizer - INFO - Real-time Visualizer initialized successfully
+2025-06-11 14:45:39,011 - realtime_visualizer.realtime_visualizer - INFO - Real-time Visualizer started successfully
+2025-06-11 14:45:39,011 - realtime_visualizer.realtime_visualizer - INFO - Frontend available at: http://localhost:8080
+2025-06-11 14:45:39,011 - realtime_visualizer.realtime_visualizer - INFO - WebSocket server running on: ws://localhost:8765

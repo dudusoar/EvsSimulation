@@ -1,5 +1,5 @@
 """
-Electric Vehicle Simulation System Main Program
+Electric Vehicle Simulation System Main Program - 修复版本
 Program entry point, handles command line arguments and coordinates module execution
 """
 
@@ -8,6 +8,7 @@ import sys
 import json
 import asyncio
 from datetime import datetime
+import os
 
 from config.simulation_config import SIMULATION_CONFIG
 from core.simulation_engine import SimulationEngine
@@ -23,7 +24,7 @@ def import_realtime_visualizer():
     except ImportError as e:
         print(f"Error: Could not import realtime visualizer: {e}")
         print("Make sure you have installed the required dependencies:")
-        print("  pip install websockets asyncio")
+        print("  pip install websockets aiohttp")
         sys.exit(1)
 
 
@@ -41,58 +42,86 @@ def load_custom_config(config_file: str) -> dict:
         return SIMULATION_CONFIG
 
 
-def run_simulation(config: dict, args):
-    """Run simulation"""
-    print("=" * 60)
-    print("EV Driver Simulation System")
+def check_dependencies():
+    """检查依赖项是否安装"""
+    try:
+        import websockets
+        import aiohttp
+        return True
+    except ImportError:
+        return False
+
+
+def run_realtime_simulation(config: dict, args):
+    """运行实时可视化仿真"""
+    print("\n🚀 Starting Real-time Visualization System...")
     print("=" * 60)
     
-    # Check if realtime mode is requested
-    if hasattr(args, 'realtime') and args.realtime:
-        print("\n🚀 Starting Real-time Visualization System...")
-        print("=" * 60)
+    # 检查依赖
+    if not check_dependencies():
+        print("❌ Missing dependencies for real-time visualization!")
+        print("Please install required packages:")
+        print("  pip install websockets>=11.0.0 aiohttp>=3.8.0")
+        sys.exit(1)
+    
+    # 更新配置
+    if args.location:
+        config['location'] = args.location
+    if args.vehicles:
+        config['num_vehicles'] = args.vehicles
+    if args.duration:
+        config['simulation_duration'] = args.duration
         
-        # Update configuration for realtime mode
-        if args.location:
-            config['location'] = args.location
-        if args.vehicles:
-            config['num_vehicles'] = args.vehicles
-            
-        print(f"Configuration:")
-        print(f"- Location: {config.get('location', 'West Lafayette, IN')}")
-        print(f"- Vehicles: {config.get('num_vehicles', 10)}")
-        print(f"- Mode: Real-time Interactive Visualization")
-        print()
-        print("📡 Services will be available at:")
-        print("   Frontend: http://localhost:8080")
-        print("   WebSocket: ws://localhost:8765")
-        print()
-        print("Press Ctrl+C to stop the server")
-        print("=" * 60)
-        
-        # Import and start realtime visualizer
-        RealtimeVisualizer = import_realtime_visualizer()
-        
-        async def run_realtime():
-            visualizer = RealtimeVisualizer(config=config)
-            try:
-                await visualizer.start()
-                # Keep running until interrupted
-                while True:
-                    await asyncio.sleep(1)
-            except KeyboardInterrupt:
-                print("\n\nShutting down Real-time Visualizer...")
-                await visualizer.stop()
-                print("Real-time Visualizer stopped successfully")
-        
-        # Run the realtime visualizer
+    print(f"Configuration:")
+    print(f"- Location: {config.get('location', 'West Lafayette, IN')}")
+    print(f"- Vehicles: {config.get('num_vehicles', 20)}")
+    print(f"- Duration: {config.get('simulation_duration', 3600)} seconds")
+    print(f"- Mode: Real-time Interactive Visualization")
+    print()
+    print("📡 Services will be available at:")
+    print("   Frontend: http://localhost:8080")
+    print("   WebSocket: ws://localhost:8765")
+    print()
+    print("Press Ctrl+C to stop the server")
+    print("=" * 60)
+    
+    # Import and start realtime visualizer
+    RealtimeVisualizer = import_realtime_visualizer()
+    
+    async def run_realtime():
+        visualizer = RealtimeVisualizer(config=config)
         try:
-            asyncio.run(run_realtime())
+            await visualizer.start()
+            print("\n✅ Real-time Visualizer started successfully!")
+            print("🌐 Open your browser and go to: http://localhost:8080")
+            print("⌨️  Press Ctrl+C to stop")
+            
+            # Keep running until interrupted
+            while True:
+                await asyncio.sleep(1)
         except KeyboardInterrupt:
-            print("\nReal-time Visualizer interrupted by user")
-        return None
+            print("\n\n🛑 Shutting down Real-time Visualizer...")
+            await visualizer.stop()
+            print("✅ Real-time Visualizer stopped successfully")
+        except Exception as e:
+            print(f"\n❌ Error in real-time visualizer: {e}")
+            await visualizer.stop()
     
-    # Original simulation logic continues below...
+    # Run the realtime visualizer
+    try:
+        asyncio.run(run_realtime())
+    except KeyboardInterrupt:
+        print("\n🛑 Real-time Visualizer interrupted by user")
+    except Exception as e:
+        print(f"\n❌ Failed to start real-time visualizer: {e}")
+        sys.exit(1)
+
+
+def run_traditional_simulation(config: dict, args):
+    """运行传统仿真"""
+    print("=" * 60)
+    print("EV Driver Simulation System - Traditional Mode")
+    print("=" * 60)
     
     # Update configuration
     if args.location:
@@ -166,6 +195,15 @@ def run_simulation(config: dict, args):
     return final_stats
 
 
+def run_simulation(config: dict, args):
+    """Main simulation runner"""
+    # Check if realtime mode is requested
+    if hasattr(args, 'realtime') and args.realtime:
+        return run_realtime_simulation(config, args)
+    else:
+        return run_traditional_simulation(config, args)
+
+
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(
@@ -203,7 +241,7 @@ Examples:
     parser.add_argument('-c', '--config', type=str,
                       help='Configuration file path')
     
-    # Output parameters
+    # Output parameters (only for traditional mode)
     parser.add_argument('-o', '--output', type=str,
                       help='Output filename (without extension)')
     parser.add_argument('-f', '--format', choices=['html', 'mp4'],
@@ -217,7 +255,7 @@ Examples:
     parser.add_argument('--realtime', action='store_true',
                       help='Start real-time interactive visualization server (localhost:8080)')
     
-    # Data saving
+    # Data saving (only for traditional mode)
     parser.add_argument('--save-data', action='store_true',
                       help='Save simulation data')
     parser.add_argument('--report', action='store_true',
@@ -230,6 +268,10 @@ Examples:
                       help='Debug mode')
     
     args = parser.parse_args()
+    
+    # Validate arguments
+    if args.realtime and (args.headless or args.no_animation or args.save_data or args.report or args.excel):
+        print("Warning: Data saving options are not applicable in real-time mode")
     
     # Load configuration
     if args.config:
