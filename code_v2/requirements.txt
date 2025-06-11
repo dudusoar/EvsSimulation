@@ -1,0 +1,49 @@
+<<<<<<< HEAD
+# Core simulation dependencies
+osmnx>=1.5.0
+networkx>=2.8
+matplotlib>=3.5.0
+numpy>=1.21.0
+pandas>=1.4.0
+geopandas>=0.11.0
+shapely>=1.8.0
+tqdm>=4.64.0
+
+# Data processing and visualization
+seaborn>=0.11.0
+openpyxl>=3.0.0
+
+# Real-time visualization dependencies (NEW)
+websockets>=11.0.0
+aiohttp>=3.8.0
+
+# Optional dependencies for enhanced features
+# ffmpeg-python>=0.2.0  # For MP4 generation (requires FFmpeg installation)
+# jupyter>=1.0.0        # For notebook interface
+# ipywidgets>=7.6.0     # For interactive widgets
+=======
+# Core dependencies
+numpy>=1.21.0
+pandas>=1.3.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+networkx>=2.6.0
+osmnx>=1.2.0
+tqdm>=4.62.0
+
+# Data processing
+openpyxl>=3.0.9  # Excel file processing
+fastparquet>=0.8.0  # Parquet file processing
+
+# Animation generation (optional)
+ffmpeg-python>=0.2.0  # Required for MP4 video generation
+
+# Real-time visualization dependencies
+websockets>=11.0.0  # WebSocket server and client
+aiohttp>=3.8.0  # Async HTTP server (alternative/backup)
+
+# Development tools (optional)
+pytest>=7.0.0  # Unit testing
+black>=22.0.0  # Code formatting
+flake8>=4.0.0  # Code linting
+>>>>>>> b9bd6771fbd7f2273a429016a9b2c009e69bada8

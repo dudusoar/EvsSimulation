@@ -1,0 +1,302 @@
+<<<<<<< HEAD
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Vehicle Simulation - Real-time Visualizer</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>🚗 Electric Vehicle Simulation</h1>
+            <div class="connection-status" id="connection-status">
+                <span class="status-indicator" id="status-indicator"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Map Container -->
+            <div class="map-section">
+                <div id="map"></div>
+                <div class="map-overlay">
+                    <div class="simulation-time">
+                        <span>Simulation Time: </span>
+                        <span id="simulation-time">00:00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <!-- Simulation Controls -->
+                <div class="controls-section">
+                    <h3>Simulation Controls</h3>
+                    <div class="control-buttons">
+                        <button id="start-btn" class="control-btn primary">
+                            <span class="icon">▶</span> Start
+                        </button>
+                        <button id="pause-btn" class="control-btn" disabled>
+                            <span class="icon">⏸</span> Pause
+                        </button>
+                        <button id="resume-btn" class="control-btn" disabled>
+                            <span class="icon">▶</span> Resume
+                        </button>
+                        <button id="reset-btn" class="control-btn danger">
+                            <span class="icon">🔄</span> Reset
+                        </button>
+                    </div>
+                    
+                    <!-- Speed Control -->
+                    <div class="speed-control">
+                        <label for="speed-slider">Speed: <span id="speed-value">1.0</span>x</label>
+                        <input type="range" id="speed-slider" min="0.1" max="10" step="0.1" value="1.0">
+                        <div class="speed-presets">
+                            <button class="speed-btn" data-speed="1">1x</button>
+                            <button class="speed-btn" data-speed="2">2x</button>
+                            <button class="speed-btn" data-speed="5">5x</button>
+                            <button class="speed-btn" data-speed="10">10x</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Panel -->
+                <div class="stats-section">
+                    <h3>Real-time Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Active Vehicles</span>
+                            <span class="stat-value" id="stat-vehicles">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Pending Orders</span>
+                            <span class="stat-value" id="stat-pending-orders">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Active Orders</span>
+                            <span class="stat-value" id="stat-active-orders">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Completed Orders</span>
+                            <span class="stat-value" id="stat-completed-orders">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Revenue</span>
+                            <span class="stat-value" id="stat-revenue">$0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Avg Battery %</span>
+                            <span class="stat-value" id="stat-battery">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle Status -->
+                <div class="vehicle-status-section">
+                    <h3>Vehicle Status</h3>
+                    <div class="status-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #22c55e;"></div>
+                            <span>Available</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f59e0b;"></div>
+                            <span>Pickup</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #3b82f6;"></div>
+                            <span>In Service</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #ef4444;"></div>
+                            <span>Charging</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Panel -->
+                <div class="details-section" id="details-panel" style="display: none;">
+                    <h3 id="details-title">Details</h3>
+                    <div id="details-content">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-info">
+                <span>NSF Electric Vehicle Research Project</span>
+                <span>Real-time Simulation Visualizer v1.0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/main.js"></script>
+</body>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Vehicle Simulation - Real-time Visualizer</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <h1>🚗 Electric Vehicle Simulation</h1>
+            <div class="connection-status" id="connection-status">
+                <span class="status-indicator" id="status-indicator"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Map Container -->
+            <div class="map-section">
+                <div id="map"></div>
+                <div class="map-overlay">
+                    <div class="simulation-time">
+                        <span>Simulation Time: </span>
+                        <span id="simulation-time">00:00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="control-panel">
+                <!-- Simulation Controls -->
+                <div class="controls-section">
+                    <h3>Simulation Controls</h3>
+                    <div class="control-buttons">
+                        <button id="start-btn" class="control-btn primary">
+                            <span class="icon">▶</span> Start
+                        </button>
+                        <button id="pause-btn" class="control-btn" disabled>
+                            <span class="icon">⏸</span> Pause
+                        </button>
+                        <button id="resume-btn" class="control-btn" disabled>
+                            <span class="icon">▶</span> Resume
+                        </button>
+                        <button id="reset-btn" class="control-btn danger">
+                            <span class="icon">🔄</span> Reset
+                        </button>
+                    </div>
+                    
+                    <!-- Speed Control -->
+                    <div class="speed-control">
+                        <label for="speed-slider">Speed: <span id="speed-value">1.0</span>x</label>
+                        <input type="range" id="speed-slider" min="0.1" max="10" step="0.1" value="1.0">
+                        <div class="speed-presets">
+                            <button class="speed-btn" data-speed="1">1x</button>
+                            <button class="speed-btn" data-speed="2">2x</button>
+                            <button class="speed-btn" data-speed="5">5x</button>
+                            <button class="speed-btn" data-speed="10">10x</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Panel -->
+                <div class="stats-section">
+                    <h3>Real-time Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Active Vehicles</span>
+                            <span class="stat-value" id="stat-vehicles">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Pending Orders</span>
+                            <span class="stat-value" id="stat-pending-orders">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Active Orders</span>
+                            <span class="stat-value" id="stat-active-orders">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Completed Orders</span>
+                            <span class="stat-value" id="stat-completed-orders">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Revenue</span>
+                            <span class="stat-value" id="stat-revenue">$0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Avg Battery %</span>
+                            <span class="stat-value" id="stat-battery">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle Status -->
+                <div class="vehicle-status-section">
+                    <h3>Vehicle Status</h3>
+                    <div class="status-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #22c55e;"></div>
+                            <span>Available</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #f59e0b;"></div>
+                            <span>Pickup</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #3b82f6;"></div>
+                            <span>In Service</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #ef4444;"></div>
+                            <span>Charging</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Panel -->
+                <div class="details-section" id="details-panel" style="display: none;">
+                    <h3 id="details-title">Details</h3>
+                    <div id="details-content">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-info">
+                <span>NSF Electric Vehicle Research Project</span>
+                <span>Real-time Simulation Visualizer v1.0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/main.js"></script>
+</body>
+>>>>>>> b9bd6771fbd7f2273a429016a9b2c009e69bada8
+</html> 
