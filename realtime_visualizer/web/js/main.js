@@ -16,38 +16,55 @@ class SimulationApp {
         this.init = this.init.bind(this);
         this.setupEventHandlers = this.setupEventHandlers.bind(this);
         this.setupWebSocketHandlers = this.setupWebSocketHandlers.bind(this);
-        this.updateUI = this.updateUI.bind(this);
     }
 
     /**
      * Initialize the application
      */
     async init() {
-        console.log('Initializing Simulation App...');
+        console.log('🚀 Initializing Simulation App...');
         
         try {
-            // Cache UI elements
+            console.log('1. Caching UI elements...');
             this.cacheUIElements();
             
-            // Initialize map
+            console.log('2. Checking simulationMap availability...');
+            if (!window.simulationMap) {
+                throw new Error('simulationMap not available - map.js may not have loaded');
+            }
+            
+            console.log('3. Initializing map...');
             if (!window.simulationMap.initialize()) {
                 throw new Error('Failed to initialize map');
             }
             
-            // Setup event handlers
+            console.log('4. Setting up event handlers...');
             this.setupEventHandlers();
             this.setupWebSocketHandlers();
             
-            // Connect to WebSocket
-            window.simulationWS.connect();
-            
-            // Initial UI state
+            console.log('5. Setting initial UI state...');
             this.updateControlButtons();
+            this.resetStatistics();
             
-            console.log('Simulation App initialized successfully');
+            console.log('6. Connecting to WebSocket...');
+            // Connect to WebSocket (non-blocking)
+            try {
+                if (!window.simulationWS) {
+                    console.warn('simulationWS not available - websocket.js may not have loaded');
+                } else {
+                    window.simulationWS.connect();
+                }
+            } catch (wsError) {
+                console.warn('WebSocket connection failed, but app will continue in demo mode:', wsError);
+            }
+            
+            console.log('✅ Simulation App initialized successfully');
+            
+            // Show initial message
+            this.showInfo('Application loaded. Attempting to connect to simulation server...');
             
         } catch (error) {
-            console.error('Error initializing app:', error);
+            console.error('❌ Error initializing app:', error);
             this.showError('Failed to initialize application: ' + error.message);
         }
     }
@@ -149,11 +166,12 @@ class SimulationApp {
 
         ws.on('error', (error) => {
             console.error('WebSocket error:', error);
-            this.showError('Connection error: ' + error.message);
+            const errorMsg = error && error.message ? error.message : 'WebSocket connection failed';
+            this.showError('Connection error: ' + errorMsg);
         });
 
         ws.on('maxReconnectAttemptsReached', () => {
-            this.showError('Failed to connect to simulation server after multiple attempts');
+            this.showInfo('Unable to connect to live simulation server. Showing demo data instead.');
         });
 
         // Simulation data events
@@ -514,6 +532,15 @@ class SimulationApp {
         console.error(message);
         // You could implement a toast notification system here
         alert('Error: ' + message);
+    }
+
+    /**
+     * Show info message
+     */
+    showInfo(message) {
+        console.info(message);
+        // You could implement a toast notification system here
+        // For now, just log to console
     }
 
     /**

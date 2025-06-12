@@ -15,17 +15,22 @@ from core.simulation_engine import SimulationEngine
 from visualization.visualizer import Visualizer
 from data.data_manager import DataManager
 
-# Import realtime visualizer (only when needed)
+# Import realtime visualizer (only when needed and available)
 def import_realtime_visualizer():
-    """Lazy import of realtime visualizer to avoid dependency issues"""
+    """Lazy import of realtime visualizer - optional dependency"""
     try:
         from realtime_visualizer.realtime_visualizer import RealtimeVisualizer
         return RealtimeVisualizer
     except ImportError as e:
-        print(f"Error: Could not import realtime visualizer: {e}")
-        print("Make sure you have installed the required dependencies:")
-        print("  pip install websockets aiohttp")
-        sys.exit(1)
+        print(f"⚠️  Real-time visualizer not available: {e}")
+        print("💡 To enable real-time web visualization, install dependencies:")
+        print("   pip install websockets aiohttp")
+        print("📊 You can still use traditional simulation modes")
+        return None
+    except Exception as e:
+        print(f"⚠️  Real-time visualizer module error: {e}")
+        print("📊 Falling back to traditional simulation")
+        return None
 
 
 def load_custom_config(config_file: str) -> dict:
@@ -57,12 +62,22 @@ def run_realtime_simulation(config: dict, args):
     print("\n🚀 Starting Real-time Visualization System...")
     print("=" * 60)
     
+    # 尝试导入实时可视化模块
+    RealtimeVisualizer = import_realtime_visualizer()
+    
+    if RealtimeVisualizer is None:
+        print("\n❌ Real-time visualization is not available!")
+        print("🔄 Falling back to traditional simulation mode...")
+        print("=" * 60)
+        return run_traditional_simulation(config, args)
+    
     # 检查依赖
     if not check_dependencies():
         print("❌ Missing dependencies for real-time visualization!")
         print("Please install required packages:")
         print("  pip install websockets>=11.0.0 aiohttp>=3.8.0")
-        sys.exit(1)
+        print("\n🔄 Falling back to traditional simulation mode...")
+        return run_traditional_simulation(config, args)
     
     # 更新配置
     if args.location:
@@ -85,9 +100,6 @@ def run_realtime_simulation(config: dict, args):
     print("Press Ctrl+C to stop the server")
     print("=" * 60)
     
-    # Import and start realtime visualizer
-    RealtimeVisualizer = import_realtime_visualizer()
-    
     async def run_realtime():
         visualizer = RealtimeVisualizer(config=config)
         try:
@@ -105,16 +117,19 @@ def run_realtime_simulation(config: dict, args):
             print("✅ Real-time Visualizer stopped successfully")
         except Exception as e:
             print(f"\n❌ Error in real-time visualizer: {e}")
+            print("🔄 Falling back to traditional simulation...")
             await visualizer.stop()
+            return run_traditional_simulation(config, args)
     
     # Run the realtime visualizer
     try:
-        asyncio.run(run_realtime())
+        return asyncio.run(run_realtime())
     except KeyboardInterrupt:
         print("\n🛑 Real-time Visualizer interrupted by user")
     except Exception as e:
         print(f"\n❌ Failed to start real-time visualizer: {e}")
-        sys.exit(1)
+        print("🔄 Falling back to traditional simulation...")
+        return run_traditional_simulation(config, args)
 
 
 def run_traditional_simulation(config: dict, args):

@@ -6,9 +6,10 @@
 
 import sys
 import os
+from pathlib import Path
 
 # 添加项目根目录到路径
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(str(Path(__file__).parent.parent))
 
 def check_dependencies():
     """检查依赖项"""

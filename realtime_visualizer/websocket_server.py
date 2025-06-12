@@ -380,24 +380,39 @@ class WebSocketServer:
     def start_server(self):
         """启动WebSocket服务器"""
         def run_server():
-            self.loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self.loop)
-            
-            start_server = websockets.serve(
-                self.register_client,
-                "localhost",
-                self.port
-            )
-            
-            print(f"WebSocket服务器启动在 ws://localhost:{self.port}")
-            self.loop.run_until_complete(start_server)
-            self.loop.run_forever()
+            try:
+                # 创建新的事件循环
+                self.loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self.loop)
+                
+                # 启动WebSocket服务器
+                start_server_coroutine = websockets.serve(
+                    self.register_client,
+                    "localhost",
+                    self.port
+                )
+                
+                # 运行服务器
+                self.server = self.loop.run_until_complete(start_server_coroutine)
+                print(f"✅ WebSocket服务器成功启动在 ws://localhost:{self.port}")
+                
+                # 保持事件循环运行
+                self.loop.run_forever()
+                
+            except Exception as e:
+                print(f"❌ WebSocket服务器启动错误: {e}")
+                import traceback
+                traceback.print_exc()
+                print("🔄 HTTP服务器继续运行，但实时功能不可用...")
+            finally:
+                if hasattr(self, 'loop') and self.loop and not self.loop.is_closed():
+                    self.loop.close()
         
         self.server_thread = threading.Thread(target=run_server, daemon=True)
         self.server_thread.start()
         
-        # 等待服务器启动
-        time.sleep(1)
+        # 给服务器更多时间启动
+        time.sleep(3)
     
     def stop_server(self):
         """停止服务器"""

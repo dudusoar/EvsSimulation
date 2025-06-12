@@ -17,10 +17,8 @@ from typing import Dict, List, Any, Optional
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from realtime_visualizer.websocket_server import WebSocketServer
+from realtime_visualizer.flask_api_server import FlaskApiServer
 from core.simulation_engine import SimulationEngine
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-import socketserver
 
 class RealtimeVisualizer:
     """
@@ -31,9 +29,7 @@ class RealtimeVisualizer:
         self.config = config  # Configuration from main.py
         self.config_path = config_path or "simulation_config.json"
         self.simulation_engine = None
-        self.websocket_server = None
-        self.http_server = None
-        self.http_thread = None
+        self.api_server = None
         
         # Setup logging
         self.logger = logging.getLogger(__name__)
@@ -58,11 +54,8 @@ class RealtimeVisualizer:
             # Initialize simulation engine
             await self._initialize_simulation_engine()
             
-            # Initialize WebSocket server
-            await self._initialize_websocket_server()
-            
-            # Start HTTP server for frontend
-            self._start_http_server()
+            # Initialize Flask API server
+            await self._initialize_api_server()
             
             self.logger.info("Real-time Visualizer initialized successfully")
             return True
@@ -91,38 +84,14 @@ class RealtimeVisualizer:
         
         self.logger.info("Simulation engine initialized")
     
-    async def _initialize_websocket_server(self):
-        """Initialize WebSocket server with message handlers"""
-        self.logger.info("Initializing WebSocket server...")
+    async def _initialize_api_server(self):
+        """Initialize Flask API server"""
+        self.logger.info("Initializing Flask API server...")
         
-        # WebSocketServer needs the simulation engine
-        self.websocket_server = WebSocketServer(self.simulation_engine, port=8765)
+        # Flask API server integrates HTTP and API in one
+        self.api_server = FlaskApiServer(self.simulation_engine, port=8080)
         
-        self.logger.info("WebSocket server initialized")
-    
-    def _start_http_server(self):
-        """Start HTTP server to serve frontend files"""
-        web_dir = Path(__file__).parent / "web"
-        
-        class CustomHTTPRequestHandler(SimpleHTTPRequestHandler):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, directory=str(web_dir), **kwargs)
-                
-            def log_message(self, format, *args):
-                # Suppress HTTP server logs
-                pass
-        
-        try:
-            self.http_server = HTTPServer(('localhost', 8080), CustomHTTPRequestHandler)
-            self.http_thread = threading.Thread(
-                target=self.http_server.serve_forever,
-                daemon=True
-            )
-            self.http_thread.start()
-            self.logger.info("HTTP server started on http://localhost:8080")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to start HTTP server: {e}")
+        self.logger.info("Flask API server initialized")
     
     # Note: Message handling is now managed by WebSocketServer class
     
@@ -133,12 +102,12 @@ class RealtimeVisualizer:
             if not await self.initialize():
                 raise Exception("Initialization failed")
             
-            # Start WebSocket server
-            self.websocket_server.start_server()
+            # Start Flask API server
+            self.api_server.start_server()
             
             self.logger.info("Real-time Visualizer started successfully")
             self.logger.info("Frontend available at: http://localhost:8080")
-            self.logger.info("WebSocket server running on: ws://localhost:8765")
+            self.logger.info("API endpoints available at: http://localhost:8080/api/")
             
         except Exception as e:
             self.logger.error(f"Failed to start: {e}")
@@ -149,16 +118,9 @@ class RealtimeVisualizer:
         try:
             self.logger.info("Stopping Real-time Visualizer...")
             
-            # Stop WebSocket server
-            if self.websocket_server:
-                self.websocket_server.stop_server()
-            
-            # Stop HTTP server
-            if self.http_server:
-                self.http_server.shutdown()
-                
-            if self.http_thread and self.http_thread.is_alive():
-                self.http_thread.join(timeout=2.0)
+            # Stop Flask API server
+            if self.api_server:
+                self.api_server.stop_server()
             
             self.logger.info("Real-time Visualizer stopped")
             

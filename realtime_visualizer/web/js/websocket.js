@@ -247,14 +247,172 @@ class SimulationWebSocket {
         if (statusIndicator && statusText) {
             if (connected) {
                 statusIndicator.classList.add('connected');
-                statusText.textContent = 'Connected';
+                statusText.textContent = 'Connected to Simulation Server';
             } else {
                 statusIndicator.classList.remove('connected');
-                statusText.textContent = this.reconnectAttempts > 0 ? 
-                    `Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})` : 
-                    'Disconnected';
+                if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                    statusText.textContent = 'Connection Failed - Server Unavailable';
+                    console.log('🔌 无法连接到实时仿真服务器，请检查后端是否正常运行');
+                } else {
+                    statusText.textContent = this.reconnectAttempts > 0 ? 
+                        `Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})` : 
+                        'Connecting to Simulation Server...';
+                }
             }
         }
+    }
+
+    /**
+     * Enable offline mode with static data
+     */
+    enableOfflineMode() {
+        console.log('Enabling offline mode with static simulation data');
+        
+        // Simulate basic map data for demonstration
+        setTimeout(() => {
+            this.emit('map_data', {
+                charging_stations: [
+                    { id: 'cs1', position: [-86.9080, 40.4259], capacity: 4 },
+                    { id: 'cs2', position: [-86.9200, 40.4300], capacity: 6 },
+                    { id: 'cs3', position: [-86.9000, 40.4200], capacity: 8 }
+                ]
+            });
+            
+            // Simulate control state
+            this.emit('control_state', {
+                is_running: false,
+                is_paused: false,
+                speed_multiplier: 1.0
+            });
+            
+            // Show demo vehicles
+            const demoVehicles = [];
+            for (let i = 0; i < 10; i++) {
+                demoVehicles.push({
+                    id: `vehicle_${i}`,
+                    position: [-86.9080 + (Math.random() - 0.5) * 0.02, 40.4259 + (Math.random() - 0.5) * 0.02],
+                    battery_percentage: 50 + Math.random() * 50,
+                    status: ['idle', 'picking_up', 'en_route', 'charging'][Math.floor(Math.random() * 4)],
+                    has_passenger: Math.random() > 0.7
+                });
+            }
+            
+            // Show demo orders
+            const demoOrders = [];
+            for (let i = 0; i < 5; i++) {
+                demoOrders.push({
+                    id: `order_${i}`,
+                    pickup_position: [-86.9080 + (Math.random() - 0.5) * 0.02, 40.4259 + (Math.random() - 0.5) * 0.02],
+                    dropoff_position: [-86.9080 + (Math.random() - 0.5) * 0.02, 40.4259 + (Math.random() - 0.5) * 0.02],
+                    status: ['pending', 'active'][Math.floor(Math.random() * 2)],
+                    assigned_vehicle: Math.random() > 0.5 ? `vehicle_${Math.floor(Math.random() * 10)}` : null
+                });
+            }
+            
+            this.emit('simulation_update', {
+                timestamp: new Date().toISOString(),
+                simulation_time: 0,
+                vehicles: demoVehicles,
+                orders: demoOrders,
+                statistics: {
+                    total_vehicles: 10,
+                    pending_orders: 3,
+                    active_orders: 2,
+                    completed_orders: 15,
+                    total_revenue: 287.50,
+                    average_battery: 75
+                }
+            });
+            
+            // Start animation loop for demo mode
+            this.startDemoAnimation(demoVehicles, demoOrders);
+            
+        }, 2000);
+    }
+
+    /**
+     * Start demo animation loop
+     */
+    startDemoAnimation(vehicles, orders) {
+        console.log('🎬 Starting demo animation...');
+        
+        let simulationTime = 0;
+        let completedOrders = 15;
+        let totalRevenue = 287.50;
+        
+        const animationInterval = setInterval(() => {
+            // Update simulation time
+            simulationTime += 5; // 5 seconds per update
+            
+            // Animate vehicles
+            vehicles.forEach(vehicle => {
+                // Slightly move vehicles
+                vehicle.position[0] += (Math.random() - 0.5) * 0.0005;
+                vehicle.position[1] += (Math.random() - 0.5) * 0.0005;
+                
+                // Randomly change battery (simulate charging/usage)
+                vehicle.battery_percentage += (Math.random() - 0.5) * 2;
+                vehicle.battery_percentage = Math.max(10, Math.min(100, vehicle.battery_percentage));
+                
+                // Randomly change status
+                if (Math.random() < 0.1) { // 10% chance to change status
+                    const statuses = ['idle', 'picking_up', 'en_route', 'charging'];
+                    vehicle.status = statuses[Math.floor(Math.random() * statuses.length)];
+                    vehicle.has_passenger = vehicle.status === 'en_route' && Math.random() > 0.3;
+                }
+            });
+            
+            // Animate orders
+            orders.forEach(order => {
+                // Randomly complete some orders
+                if (order.status === 'active' && Math.random() < 0.05) { // 5% chance
+                    order.status = 'completed';
+                    completedOrders++;
+                    totalRevenue += 15 + Math.random() * 20; // Add $15-35 revenue
+                }
+                
+                // Create new orders occasionally
+                if (order.status === 'completed' && Math.random() < 0.03) { // 3% chance
+                    order.status = 'pending';
+                    order.pickup_position = [-86.9080 + (Math.random() - 0.5) * 0.02, 40.4259 + (Math.random() - 0.5) * 0.02];
+                    order.dropoff_position = [-86.9080 + (Math.random() - 0.5) * 0.02, 40.4259 + (Math.random() - 0.5) * 0.02];
+                    order.assigned_vehicle = null;
+                }
+                
+                // Assign vehicles to pending orders
+                if (order.status === 'pending' && Math.random() < 0.08) { // 8% chance
+                    order.status = 'active';
+                    order.assigned_vehicle = `vehicle_${Math.floor(Math.random() * 10)}`;
+                }
+            });
+            
+            // Count order statuses
+            const pendingOrders = orders.filter(o => o.status === 'pending').length;
+            const activeOrders = orders.filter(o => o.status === 'active').length;
+            
+            // Calculate average battery
+            const avgBattery = vehicles.reduce((sum, v) => sum + v.battery_percentage, 0) / vehicles.length;
+            
+            // Emit updated data
+            this.emit('simulation_update', {
+                timestamp: new Date().toISOString(),
+                simulation_time: simulationTime,
+                vehicles: vehicles,
+                orders: orders,
+                statistics: {
+                    total_vehicles: 10,
+                    pending_orders: pendingOrders,
+                    active_orders: activeOrders,
+                    completed_orders: completedOrders,
+                    total_revenue: Math.round(totalRevenue * 100) / 100, // Round to 2 decimal places
+                    average_battery: Math.round(avgBattery)
+                }
+            });
+            
+        }, 2000); // Update every 2 seconds
+        
+        // Store interval ID for potential cleanup
+        this.demoAnimationInterval = animationInterval;
     }
 
     /**
