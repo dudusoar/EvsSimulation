@@ -4,6 +4,8 @@ Contains all simulation-related configuration parameters
 """
 
 # ============= Basic Simulation Parameters =============
+
+# Modelling
 SIMULATION_CONFIG = {
     # Map parameters
     'location': "Manhattan, New York, NY, USA",

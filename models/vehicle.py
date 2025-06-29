@@ -28,7 +28,7 @@ class Vehicle:
     current_task: Optional[Dict] = None   # Current task
     
     # ============= Route Related =============
-    current_node: Optional[int] = None      # Current node
+    current_node: Optional[int] = None      # Current node (either returns the int of its node or None)
     target_node: Optional[int] = None       # Target node
     route_nodes: List[int] = field(default_factory=list)      # Route node list
     path_points: List[Tuple[float, float]] = field(default_factory=list)  # Detailed path points

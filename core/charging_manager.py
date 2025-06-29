@@ -12,8 +12,14 @@ from config.simulation_config import VEHICLE_STATUS
 from utils.geometry import calculate_distance
 
 
+
 class ChargingManager:
     """Charging Manager Class"""
+
+    # Model(R): This class allows us to match each station to a unique random id. 
+    # Moreover, it specifies the charging rate and threshold
+    # Input: MapManager (Class), Configuration parameters (Dict)
+    # Output: None
     
     def __init__(self, map_manager: MapManager, config: Dict):
         """
@@ -31,16 +37,27 @@ class ChargingManager:
         self.node_to_station: Dict[int, str] = {}  # node_id -> station_id mapping
         
         # Charging parameters
-        self.charging_rate = config.get('charging_rate', 1.0)  # %/second
+        self.charging_rate = config.get('charging_rate', 1.0)  # %/second 
+        #### add different charging rates based on vehicle type
+
         self.charging_threshold = config.get('charging_threshold', 20.0)  # %
+        #aka this is the min battery percentage
         
         # Initialize charging stations
         self._initialize_charging_stations()
     
     # ============= Initialization Methods =============
+
+    # Model(R): Specifies the number of charging stations and slots per station.
+    # Adds the details(station number, node id, x,y position, total slots, charging rate, price)
+    # to a dictionary using their station id as the key. 
+
+    # Inputs: None
+    # Outputs: None
+
     def _initialize_charging_stations(self):
         """Initialize charging stations"""
-        num_stations = self.config.get('num_charging_stations', 5)
+        num_stations = self.config.get('num_charging_stations', 5) 
         slots_per_station = self.config.get('charging_slots_per_station', 3)
         
         # Select charging station locations
@@ -60,11 +77,16 @@ class ChargingManager:
             )
             
             self.charging_stations[station.station_id] = station
-            self.node_to_station[node_id] = station.station_id
+            self.node_to_station[node_id] = station.station_id #Maps the node id to the station id
         
         print(f"Initialized {len(self.charging_stations)} charging stations")
     
     # ============= Charging Station Search Methods =============
+    # Test: This will find the nearest station based on the distance (calculated via Distance formaula) and whether it has an available slot.
+
+    # Input: x,y position of EV on map (Tuple)
+    # Output: Closest available station to EV (Object of Charging Station class) or None
+
     def find_nearest_available_station(self, position: Tuple[float, float]) -> Optional[ChargingStation]:
         """Find nearest available charging station"""
         best_station = None
@@ -78,6 +100,11 @@ class ChargingManager:
                     best_station = station
         
         return best_station
+    
+    # Test: This will find the best charging station based on distance (determined via Dijkstra), availability, and queue time
+    # Input: Vehicle (class)
+    # Output: Closest available station to EV (Object of Charging Station class) or None
+
     
     def find_optimal_charging_station(self, vehicle: Vehicle) -> Optional[ChargingStation]:
         """
@@ -112,6 +139,55 @@ class ChargingManager:
         
         return best_station
     
+    # ------------NEW FUNCTION 
+    
+    def find_extra_optimal_charging_station(self, vehicle: Vehicle) -> Optional[ChargingStation]:
+
+        """
+        Finds the best station based on different factors 
+        1. Time
+        2. Queue
+        -- These factors depend on whether or not the charging stations will differ
+        3. How fast it can charge the vehicle
+        4. Sustainability factor
+        5. Cost to charge
+
+        """
+        if not vehicle.current_node:
+            return None
+        
+        vehicle_pos = self.map_manager.get_node_position(vehicle.current_node)
+        
+        # Calculate score for each charging station
+        best_station = None
+        min_score = float('inf')
+        
+        for station in self.charging_stations.values():
+            if not station.has_available_slot():
+                continue
+            
+            # Calculate time
+            distance = self.map_manager.get_fastest_path_nodes(
+                vehicle.current_node, station.node_id
+            )
+            
+            # Calculate score: distance + queue penalty
+            utilization_penalty = station.get_utilization_rate() * 1000
+            score = distance + utilization_penalty
+
+            #
+            
+            if score < min_score:
+                min_score = score
+                best_station = station
+        
+        return best_station
+
+    # Test: Gets the station based on the node id
+    # Input: Node id (int)
+    # Output: Best Charging Station (Object of ChargingStation class)
+
+    
     def get_station_by_node(self, node_id: int) -> Optional[ChargingStation]:
         """Get charging station by node ID"""
         station_id = self.node_to_station.get(node_id)
@@ -120,6 +196,11 @@ class ChargingManager:
         return None
     
     # ============= Charging Control Methods =============
+
+    # Test: Checks if a certain vehicle in a specific charging station is charging
+    # Input: vehicle (Object of Vehicle Class), station (Object of ChargingStation Class)
+    # Output: Whether or not vehicle is charging on that station (Bool)
+     
     def request_charging(self, vehicle: Vehicle, station: ChargingStation) -> bool:
         """
         Request charging
@@ -142,6 +223,12 @@ class ChargingManager:
         
         return False
     
+    # Test: checks if vehicle is charging, if so, it will calculate how much it has charged and the cost. 
+    # It then updates the vehicle to be idle.
+    # If the station is not charging, it will just return the charge cost and amount to both be zero
+    # Input: vehicle (Object of Vehicle Class)
+    # Output: Charge amount, charge cost (Tuple)
+
     def stop_charging(self, vehicle: Vehicle) -> Tuple[float, float]:
         """
         Stop charging
@@ -179,6 +266,11 @@ class ChargingManager:
         
         return charge_amount, cost
     
+    # Test: Loops through each station then each of its vehicles to update how much each vehicle has charged 
+    # during a given time step
+    # Input: Time step (float)
+    # Output: each vehicle id and its charge (Dictionary)
+    
     def update_charging_progress(self, dt: float) -> Dict[str, float]:
         """
         Update charging progress for all vehicles currently charging
@@ -200,6 +292,10 @@ class ChargingManager:
                 charging_updates[vehicle_id] = charge_amount
         
         return charging_updates
+    
+    # Test: Determines if vehicle should charge. It will charge if it doesn't have a passenger and battery below threshold
+    # Input: vehicle (Object of vehicle class)
+    # Output: Whether vehicle should charge or not (bool)
     
     def should_vehicle_charge(self, vehicle: Vehicle) -> bool:
         """
@@ -226,6 +322,12 @@ class ChargingManager:
         return False
     
     # ============= Statistics Methods =============
+
+    # Test: Gets the statistics of the charging system (total stations, total slots, occupied slots, available slots, 
+    # average utilization rate, total energy delivered, total revenue generated, total vehicles charged, average revenue per station)
+    # Input: None
+    # Output: Statistics (Dict)
+
     def get_statistics(self) -> Dict:
         """Get charging system statistics"""
         total_stations = len(self.charging_stations)
@@ -250,9 +352,17 @@ class ChargingManager:
             'avg_revenue_per_station': total_revenue / max(1, total_stations)
         }
     
+    # Test: Gets a list of all charging stations
+    # Input: None
+    # Output: List of all charging stations (List)
+    
     def get_station_list(self) -> List[ChargingStation]:
         """Get all charging station list"""
         return list(self.charging_stations.values())
+    
+    # Test: Gets a list of all busy charging stations (utilization rate is > 80%)
+    # Input: None
+    # Output: List of all busy charging stations (List)
     
     def get_busy_stations(self) -> List[ChargingStation]:
         """Get busy charging stations (utilization > 80%)"""

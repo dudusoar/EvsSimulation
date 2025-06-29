@@ -17,7 +17,13 @@ from utils.path_utils import decompose_path
 class MapManager:
     """Map Manager Class"""
     
+    # Test: Initializes the amo by loading and caching node positions
+    # Input: Location needed to analyze (string), path to directory of map data (string)
+    # Output: None
+
+    
     def __init__(self, location: str, cache_dir: str = 'datasets/maps'):
+
         """
         Initialize map manager
         
@@ -45,6 +51,11 @@ class MapManager:
         self.ax = None
     
     # ============= Map Loading Methods =============
+    # Test: Generates Cache file name, tries loading from cache (if graphm1 file already exists, it's just loaded), 
+    # downloads road network from OSM if not cached, saves the dowloaded graph to cache path, and handles errors
+    # Input: None
+    # Output: Directed multigraph
+
     def _load_graph(self) -> nx.MultiDiGraph:
         """Load map graph"""
         # Construct cache filename
@@ -79,19 +90,35 @@ class MapManager:
             )
     
     # ============= Node Management Methods =============
+    # Test: Gets all nodes in the projected graph
+    # Input: None
+    # Output: List of all node IDs (int List) 
+
     def get_all_nodes(self) -> List[int]:
         """Get all node IDs"""
         return list(self.projected_graph.nodes())
     
+    # Test: Gets n random nodes from the projected graph
+    # Input: number of random nodes wanted (int)
+    # Output: List of all random node IDs (int List) 
+
     def get_random_nodes(self, n: int) -> List[int]:
         """Get n random nodes"""
         all_nodes = self.get_all_nodes()
         return random.sample(all_nodes, min(n, len(all_nodes)))
     
+    # Test: Gets position of node based on its ID
+    # Input: node id (int)
+    # Output: (x,y) coordinate of node (Tuple) 
+
     def get_node_position(self, node_id: int) -> Tuple[float, float]:
         """Get node position"""
         return self._node_positions.get(node_id, (0.0, 0.0))
     
+    # Test: Gets nearest node to a give position
+    # Input: (x,y) position (Tuple)
+    # Output: Node ID (int)
+
     def find_nearest_node(self, position: Tuple[float, float]) -> int:
         """Find nearest node to given position"""
         x, y = position
@@ -99,6 +126,12 @@ class MapManager:
         return ox.nearest_nodes(self.graph, x, y)
     
     # ============= Route Planning Methods =============
+
+    # Test: Gets a list of node IDs for the shotrtest path to a given node using Dijkstra
+    # with the esge weights being the distances between nodes
+    # Input: node ID from which to start (int), node ID to end (int)
+    # Output: List of node IDs that gives the shortest path (int List)
+
     def get_shortest_path_nodes(self, origin: int, destination: int) -> List[int]:
         """Get shortest path node list"""
         try:
@@ -110,13 +143,18 @@ class MapManager:
             )
         except nx.NetworkXNoPath:
             return []
+        
+    # Test: Gets a list of nodes' (x,y) coordinates for the shotrtest path to a given node using Dijkstra
+    # with the esge weights being the distances between nodes
+    # Input: node ID from which to start (int), node ID to end (int)
+    # Output: List of node *x,y) coordinates that gives the shortest path (Tuple List)
     
     def get_shortest_path_points(self, origin: int, destination: int) -> List[Tuple[float, float]]:
         """Get detailed coordinate points of shortest path"""
         # Get path nodes
         route_nodes = self.get_shortest_path_nodes(origin, destination)
-        if not route_nodes:
-            return []
+        if not route_nodes: # no path exists
+            return [] 
         
         # Convert node path to detailed coordinate points
         path_lines = []
@@ -142,6 +180,10 @@ class MapManager:
         # Decompose into continuous path points
         return decompose_path(path_lines)
     
+    # Test: Calculates distance of route using dijkstra with the length as the edge weights
+    # Input: node ID from which to start (int), node ID to end (int)
+    # Output: List of node *x,y) coordinates that gives the shortest path (Tuple List)
+
     def calculate_route_distance(self, origin: int, destination: int) -> float:
         """Calculate route distance (meters)"""
         try:
@@ -153,8 +195,97 @@ class MapManager:
             )
         except nx.NetworkXNoPath:
             return float('inf')
+        
     
+     # ============= Route Planning Methods TIME BASED =============
+
+    def calculate_travel_time_weights(self, default_speed_kmh: float = 50.0):
+    
+        """ Calculate travel time weights for all edges"""
+
+        for  u,v, key, data in self.projected_graph.edges(keys=True, data = True):
+
+            #Convert length to meters (m) and speed to meters/second (m/s) for more detailed time calculation
+
+            length_m = data.get('length',0) #0 if length is not found
+
+            speed_mps= None
+
+            if 'maxspeed' in data:
+                #Default is kmh but if not, there will be a string after showing the unit (mph or mps)
+
+                speed_str = data['maxspeed']
+
+                #if km/h
+
+                if speed_str.isdigit():
+                    speed_kmh = float(speed_str)
+                    speed_mps = speed_kmh * (1000/3600)
+
+                else:
+                    numeric_part = ''.join(filter(lambda x: x.isdigit() or x == '.', speed_str))
+
+                    unit_part = speed_str.lower().replace(numeric_part, '').strip()
+
+                    if numeric_part: #Continue only if number exists
+
+                        speed_val = float(numeric_part)
+
+                        if 'km/h' in unit_part or 'kmh' in unit_part:
+                            speed_mps = speed_val * (1000 / 3600)  # km/h → m/s
+                        
+                        elif 'mph' in unit_part:
+                            speed_mps = speed_val * (1609.34 / 3600)  # mph → m/s
+                    
+                        elif 'm/s' in unit_part or 'ms' in unit_part:
+                            speed_mps = speed_val  # Already in m/s
+                    
+                        else:
+                            # Default to km/h if unit is ambiguous
+                            speed_mps = speed_val * (1000 / 3600)
+
+            if speed_mps is None or speed_mps <= 0:
+                speed_mps = default_speed_kmh * (1000 / 3600)
+
+            data['travel_time'] = length_m / speed_mps if speed_mps > 0 else float('inf')
+
+
+    def get_fastest_path_nodes(self,origin: int, destination: int) -> List[int]:
+        """ Get fastest path nodes list (time based)"""
+
+        try:
+            return nx.shortest_path(
+                self.projected_graph,
+                origin,
+                destination,
+                weight = 'travel_time'
+            )
+        
+        except nx.NetworkXNoPath:
+            return []
+        
+
+    """ def calculate_route_time(self, origin: int, destination:int) -> float:
+        Calculate route time (seconds)
+
+        try: 
+            return nx.shortest_path_length(
+                self.projected_graph,
+                origin,
+                destination,
+                weight = 'travel_time'
+            )
+        
+        except nx.NetworkXNoPath:
+            return float('inf')
+    """
     # ============= Charging Station Related Methods =============
+
+    # Test: Selects n random nodes as charging stations, nodes are chosen using K-means (Farthest point sampling) to ensure an
+    # even distribution of charging stations
+    # Input: number of charging stations (int)
+    # Output: List of nodes IDs that represent charging stations (int List)
+
     def select_charging_station_nodes(self, n: int) -> List[int]:
         """
         Select n nodes as charging station locations
@@ -203,6 +334,10 @@ class MapManager:
         
         return selected_nodes
     
+    # Test: Finds n nearest nodes to a certain position using the distance formula
+    # Input: position (Tuple), number of nearest nodes (int)
+    # Ouput: List of first n nearest nodes' positions (List of Tuples)
+    
     def find_nearest_nodes(self, position: Tuple[float, float], n: int = 5) -> List[Tuple[int, float]]:
         """
         Find n nearest nodes to given position
@@ -221,6 +356,11 @@ class MapManager:
         return distances[:n]
     
     # ============= Visualization Methods =============
+
+    # Test: sets up map plot
+    # Input: Whether or not to show a preview (Bool)
+    # Output: (figure, axes) (Tuple)
+
     def setup_plot(self, show_preview: bool = False) -> Tuple[plt.Figure, plt.Axes]:
         """Setup map plotting"""
         self.fig, self.ax = ox.plot_graph(
@@ -235,6 +375,10 @@ class MapManager:
         self.ax.set_title(self.location)
         return self.fig, self.ax
     
+    # Test: plots the route of a path on the map 
+    # Input: route nodes (int List), color (string), linewidth (float)
+    # Output: None
+    
     def plot_route(self, route_nodes: List[int], color: str = 'red', linewidth: float = 2):
         """Plot route on map"""
         if not self.ax or len(route_nodes) < 2:
@@ -248,6 +392,10 @@ class MapManager:
         self.ax.plot(x_coords, y_coords, color=color, linewidth=linewidth, alpha=0.7)
     
     # ============= Information Getter Methods =============
+
+    # Test: Gets map information 
+    # Input: None
+    # Output: location, number of nodes, number of edges, area of graph (Dict)
     def get_map_info(self) -> Dict:
         """Get map information"""
         return {
