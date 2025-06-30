@@ -133,9 +133,9 @@ def run_realtime_simulation(config: dict, args):
 
 
 def run_traditional_simulation(config: dict, args):
-    """运行传统仿真"""
+    """Run simulation with live visualization or headless mode"""
     print("=" * 60)
-    print("EV Driver Simulation System - Traditional Mode")
+    print("EV Driver Simulation System")
     print("=" * 60)
     
     # Update configuration
@@ -145,11 +145,10 @@ def run_traditional_simulation(config: dict, args):
         config['num_vehicles'] = args.vehicles
     if args.duration:
         config['simulation_duration'] = args.duration
-    if args.no_animation:
-        config['enable_animation'] = False
     
     # Print configuration information
-    print(f"\nSimulation Configuration:")
+    mode = "Headless Mode" if args.headless else "Live Visualization Mode"
+    print(f"\nSimulation Configuration ({mode}):")
     print(f"- Location: {config['location']}")
     print(f"- Vehicles: {config['num_vehicles']}")
     print(f"- Duration: {config['simulation_duration']} seconds")
@@ -159,35 +158,28 @@ def run_traditional_simulation(config: dict, args):
     # Initialize data manager
     data_manager = None
     if config.get('save_data', False) or args.save_data:
-        data_manager = DataManager()
+        data_manager = DataManager(
+            location=config['location'],
+            num_vehicles=config['num_vehicles'],
+            duration=config['simulation_duration']
+        )
     
     # Initialize simulation engine
     print("\nInitializing simulation system...")
     engine = SimulationEngine(config)
     
     # Run simulation
-    if config.get('enable_animation', True) and not args.headless:
-        # Run with visualization
-        print("\nStarting simulation with visualization...")
-        visualizer = Visualizer(engine, config)
-        
-        # Save animation
-        if args.output:
-            output_file = visualizer.save_animation(
-                filename=args.output,
-                format=args.format
-            )
-        else:
-            visualizer.save_animation(format=args.format)
-    else:
+    if args.headless:
         # Run in headless mode
         print("\nRunning simulation (headless mode)...")
         final_stats = engine.run_simulation(config['simulation_duration'])
+    else:
+        # Run with live visualization (new default)
+        print("\nStarting live simulation visualization...")
+        visualizer = Visualizer(engine, config)
+        final_stats = visualizer.run_live_simulation(config['simulation_duration'])
     
-    # Get final statistics
-    final_stats = engine.get_final_statistics()
-    
-    # Save data
+    # Save data (unified logic for both modes)
     if data_manager:
         data_manager.save_simulation_results(final_stats)
         if args.report:
@@ -195,17 +187,18 @@ def run_traditional_simulation(config: dict, args):
         if args.excel:
             data_manager.export_to_excel(final_stats)
     
-    # Print result summary
-    print("\n" + "=" * 60)
-    print("Simulation Completed!")
-    print("=" * 60)
-    print(f"\nSimulation Results Summary:")
-    print(f"- Total revenue: ${final_stats['summary']['total_revenue']:.2f}")
-    print(f"- Total cost: ${final_stats['summary']['total_cost']:.2f}")
-    print(f"- Total profit: ${final_stats['summary']['total_profit']:.2f}")
-    print(f"- Order completion rate: {final_stats['summary']['order_completion_rate']*100:.1f}%")
-    print(f"- Vehicle utilization rate: {final_stats['summary']['vehicle_utilization_rate']*100:.1f}%")
-    print(f"- Charging station utilization rate: {final_stats['summary']['charging_utilization_rate']*100:.1f}%")
+    # Print result summary (only for headless mode as live mode already shows detailed stats)
+    if args.headless:
+        print("\n" + "=" * 60)
+        print("Simulation Completed!")
+        print("=" * 60)
+        print(f"\nSimulation Results Summary:")
+        print(f"- Total revenue: ${final_stats['summary']['total_revenue']:.2f}")
+        print(f"- Total cost: ${final_stats['summary']['total_cost']:.2f}")
+        print(f"- Total profit: ${final_stats['summary']['total_profit']:.2f}")
+        print(f"- Order completion rate: {final_stats['summary']['order_completion_rate']*100:.1f}%")
+        print(f"- Vehicle utilization rate: {final_stats['summary']['vehicle_utilization_rate']*100:.1f}%")
+        print(f"- Charging station utilization rate: {final_stats['summary']['charging_utilization_rate']*100:.1f}%")
     
     return final_stats
 
@@ -222,27 +215,30 @@ def run_simulation(config: dict, args):
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(
-        description='Electric Vehicle Simulation System - Simulates electric vehicle operations in cities',
+        description='Electric Vehicle Simulation System - Real-time Live Visualization',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Run with default configuration (traditional simulation)
+  # Run with live visualization (default)
   python main.py
   
-  # Specify location and number of vehicles
-  python main.py -l "Beijing, China" -v 50
+  # Live visualization with data saving
+  python main.py --save-data
   
-  # Run in headless mode and generate report
+  # Live visualization with full report
+  python main.py --save-data --report --excel
+  
+  # Specify location and number of vehicles  
+  python main.py -l "Beijing, China" -v 50 --save-data
+  
+  # Run in headless mode for batch processing
   python main.py --headless --save-data --report
   
   # Use custom configuration file
-  python main.py -c custom_config.json
+  python main.py -c custom_config.json --save-data
   
-  # Start real-time interactive visualization (NEW!)
+  # Real-time web visualization (if available)
   python main.py --realtime
-  
-  # Real-time visualization with custom settings
-  python main.py --realtime -l "Manhattan, New York" -v 30
         """
     )
     
@@ -256,27 +252,19 @@ Examples:
     parser.add_argument('-c', '--config', type=str,
                       help='Configuration file path')
     
-    # Output parameters (only for traditional mode)
-    parser.add_argument('-o', '--output', type=str,
-                      help='Output filename (without extension)')
-    parser.add_argument('-f', '--format', choices=['html', 'mp4'],
-                      default='html', help='Animation format (default: html)')
-    
     # Run modes
     parser.add_argument('--headless', action='store_true',
-                      help='Headless mode (no visualization)')
-    parser.add_argument('--no-animation', action='store_true',
-                      help='Disable animation generation')
+                      help='Headless mode (no visualization, for batch processing)')
     parser.add_argument('--realtime', action='store_true',
-                      help='Start real-time interactive visualization server (localhost:8080)')
+                      help='Start real-time web-based visualization server (localhost:8080)')
     
-    # Data saving (only for traditional mode)
+    # Data saving options (available for all modes)
     parser.add_argument('--save-data', action='store_true',
-                      help='Save simulation data')
+                      help='Save simulation data (JSON + CSV files)')
     parser.add_argument('--report', action='store_true',
-                      help='Generate simulation report')
+                      help='Generate detailed simulation report (requires --save-data)')
     parser.add_argument('--excel', action='store_true',
-                      help='Export Excel file')
+                      help='Export results to Excel file (requires --save-data)')
     
     # Debug parameters
     parser.add_argument('--debug', action='store_true',
@@ -285,8 +273,17 @@ Examples:
     args = parser.parse_args()
     
     # Validate arguments
-    if args.realtime and (args.headless or args.no_animation or args.save_data or args.report or args.excel):
-        print("Warning: Data saving options are not applicable in real-time mode")
+    if args.realtime and (args.headless or args.save_data or args.report or args.excel):
+        print("Warning: Data saving options are not applicable in real-time web mode")
+    
+    if (args.report or args.excel) and not args.save_data:
+        print("Warning: --report and --excel require --save-data to be enabled")
+        print("         Adding --save-data automatically")
+        args.save_data = True
+    
+    if args.realtime and args.headless:
+        print("Error: Cannot use both --realtime and --headless modes simultaneously")
+        sys.exit(1)
     
     # Load configuration
     if args.config:

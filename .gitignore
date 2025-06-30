@@ -137,6 +137,7 @@ ehthumbs.db
 Thumbs.db
 
 # Simulation output files
+outputs/
 simulation_output/
 graphml_files/
 *.mp4

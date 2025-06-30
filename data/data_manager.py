@@ -15,12 +15,17 @@ import seaborn as sns
 class DataManager:
     """Data Manager Class"""
     
-    def __init__(self, output_dir: str = 'outputs/simulation_results'):
+    def __init__(self, output_dir: str = 'outputs/simulation_results', 
+                 location: str = None, num_vehicles: int = None, 
+                 duration: float = None):
         """
         Initialize data manager
         
         Args:
             output_dir: Output directory
+            location: Simulation location
+            num_vehicles: Number of vehicles
+            duration: Simulation duration in seconds
         """
         self.output_dir = output_dir
         
@@ -28,9 +33,37 @@ class DataManager:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         
-        # Create subdirectory for this run
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.run_dir = os.path.join(output_dir, f"run_{timestamp}")
+        # Create descriptive subdirectory name for this run
+        date_stamp = datetime.now().strftime("%Y%m%d")
+        
+        # Build descriptive folder name
+        folder_name_parts = [date_stamp]
+        
+        if location:
+            # Clean location name for use in filename
+            clean_location = location.replace(',', '').replace(' ', '_').replace('/', '_')
+            # Take first part if too long
+            if len(clean_location) > 20:
+                clean_location = clean_location.split('_')[0]
+            folder_name_parts.append(clean_location)
+        
+        if num_vehicles is not None:
+            folder_name_parts.append(f"{num_vehicles}v")
+        
+        if duration is not None:
+            if duration >= 3600:
+                # Show in hours if >= 1 hour
+                folder_name_parts.append(f"{duration/3600:.1f}h")
+            elif duration >= 60:
+                # Show in minutes if >= 1 minute
+                folder_name_parts.append(f"{duration/60:.0f}m")
+            else:
+                # Show in seconds
+                folder_name_parts.append(f"{duration:.0f}s")
+        
+        folder_name = "_".join(folder_name_parts)
+        
+        self.run_dir = os.path.join(output_dir, folder_name)
         os.makedirs(self.run_dir)
         
         # Data storage

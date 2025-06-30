@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_d5e0f51c91a27100c07c850a412b8cea {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_d5e0f51c91a27100c07c850a412b8cea" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_d5e0f51c91a27100c07c850a412b8cea = L.map(
+                "map_d5e0f51c91a27100c07c850a412b8cea",
+                {
+                    center: [40.4259, -86.9081],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 13,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_8d0cc6c8fc56e60201122d23215cdacb = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_8d0cc6c8fc56e60201122d23215cdacb.addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var marker_1cfb2bf928287b40a8f958a47d6d3431 = L.marker(
+                [40.420899999999996, -86.9131],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_a514ca6e19001e861b6e59a71b880d50 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_293e78166dea4a0308b94004a00e982e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_f16ae4476a8a914371870047d0ebff25 = $(`<div id="html_f16ae4476a8a914371870047d0ebff25" style="width: 100.0%; height: 100.0%;">Vehicle 1</div>`)[0];
+                popup_293e78166dea4a0308b94004a00e982e.setContent(html_f16ae4476a8a914371870047d0ebff25);
+            
+        
+
+        marker_1cfb2bf928287b40a8f958a47d6d3431.bindPopup(popup_293e78166dea4a0308b94004a00e982e)
+        ;
+
+        
+    
+    
+                marker_1cfb2bf928287b40a8f958a47d6d3431.setIcon(icon_a514ca6e19001e861b6e59a71b880d50);
+            
+    
+            var marker_b64a665fe1a1e87e6aaff4798cd7fe44 = L.marker(
+                [40.421899999999994, -86.9121],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_0d464debed9737829c8747aca90e16a1 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_de0a958605820d0ecf842174c1d50e2d = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_1e1d0eb8b79658e9af8775d1a289e301 = $(`<div id="html_1e1d0eb8b79658e9af8775d1a289e301" style="width: 100.0%; height: 100.0%;">Vehicle 2</div>`)[0];
+                popup_de0a958605820d0ecf842174c1d50e2d.setContent(html_1e1d0eb8b79658e9af8775d1a289e301);
+            
+        
+
+        marker_b64a665fe1a1e87e6aaff4798cd7fe44.bindPopup(popup_de0a958605820d0ecf842174c1d50e2d)
+        ;
+
+        
+    
+    
+                marker_b64a665fe1a1e87e6aaff4798cd7fe44.setIcon(icon_0d464debed9737829c8747aca90e16a1);
+            
+    
+            var marker_4d170cd6ae65fddf04cb56ccfe5b1b48 = L.marker(
+                [40.4229, -86.9111],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_029455f0e8efaa2baba36a8dc3e1daa8 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_80bb04517044f4073c5e01f78f360ad9 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_50d87f6138e5609a5f6ca7e3dd437ba5 = $(`<div id="html_50d87f6138e5609a5f6ca7e3dd437ba5" style="width: 100.0%; height: 100.0%;">Vehicle 3</div>`)[0];
+                popup_80bb04517044f4073c5e01f78f360ad9.setContent(html_50d87f6138e5609a5f6ca7e3dd437ba5);
+            
+        
+
+        marker_4d170cd6ae65fddf04cb56ccfe5b1b48.bindPopup(popup_80bb04517044f4073c5e01f78f360ad9)
+        ;
+
+        
+    
+    
+                marker_4d170cd6ae65fddf04cb56ccfe5b1b48.setIcon(icon_029455f0e8efaa2baba36a8dc3e1daa8);
+            
+    
+            var marker_92d2a4ec3475593b19951fc57073d462 = L.marker(
+                [40.423899999999996, -86.9101],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_e41d2fba7c4df5f178fcc917b470becc = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2831d0e970c6af806d9bf72892f21b88 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_74f4a3228d3392a9845b4ee68f8e4d79 = $(`<div id="html_74f4a3228d3392a9845b4ee68f8e4d79" style="width: 100.0%; height: 100.0%;">Vehicle 4</div>`)[0];
+                popup_2831d0e970c6af806d9bf72892f21b88.setContent(html_74f4a3228d3392a9845b4ee68f8e4d79);
+            
+        
+
+        marker_92d2a4ec3475593b19951fc57073d462.bindPopup(popup_2831d0e970c6af806d9bf72892f21b88)
+        ;
+
+        
+    
+    
+                marker_92d2a4ec3475593b19951fc57073d462.setIcon(icon_e41d2fba7c4df5f178fcc917b470becc);
+            
+    
+            var marker_1e090011eb4332b1bd5067b991c2f7b2 = L.marker(
+                [40.424899999999994, -86.9091],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_f44684c51e31fc360e5b44bc25987b8e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3193f342cf7c20bc2494b9909c171049 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_4857e31bea0f065c68cf675272a8e473 = $(`<div id="html_4857e31bea0f065c68cf675272a8e473" style="width: 100.0%; height: 100.0%;">Vehicle 5</div>`)[0];
+                popup_3193f342cf7c20bc2494b9909c171049.setContent(html_4857e31bea0f065c68cf675272a8e473);
+            
+        
+
+        marker_1e090011eb4332b1bd5067b991c2f7b2.bindPopup(popup_3193f342cf7c20bc2494b9909c171049)
+        ;
+
+        
+    
+    
+                marker_1e090011eb4332b1bd5067b991c2f7b2.setIcon(icon_f44684c51e31fc360e5b44bc25987b8e);
+            
+    
+            var marker_e14e53bb6620824a015471bd52b4cf73 = L.marker(
+                [40.4259, -86.9081],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_4e5d5d25f2ec24b70938cf7610e5d3ec = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_769f2623cc08e5672c013bf56aec70ea = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_c1d604a6469e108cfe4ce05c8c41ccfd = $(`<div id="html_c1d604a6469e108cfe4ce05c8c41ccfd" style="width: 100.0%; height: 100.0%;">Vehicle 6</div>`)[0];
+                popup_769f2623cc08e5672c013bf56aec70ea.setContent(html_c1d604a6469e108cfe4ce05c8c41ccfd);
+            
+        
+
+        marker_e14e53bb6620824a015471bd52b4cf73.bindPopup(popup_769f2623cc08e5672c013bf56aec70ea)
+        ;
+
+        
+    
+    
+                marker_e14e53bb6620824a015471bd52b4cf73.setIcon(icon_4e5d5d25f2ec24b70938cf7610e5d3ec);
+            
+    
+            var marker_7e646c5aaecb4cfbad7cdba40cb7787e = L.marker(
+                [40.426899999999996, -86.9071],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_8970183c2df9f3eaffaee11365b81952 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_79304f3437dbb58c2876b795e931ee90 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_3931cdfce0101e5ca2f477622ce3ccdc = $(`<div id="html_3931cdfce0101e5ca2f477622ce3ccdc" style="width: 100.0%; height: 100.0%;">Vehicle 7</div>`)[0];
+                popup_79304f3437dbb58c2876b795e931ee90.setContent(html_3931cdfce0101e5ca2f477622ce3ccdc);
+            
+        
+
+        marker_7e646c5aaecb4cfbad7cdba40cb7787e.bindPopup(popup_79304f3437dbb58c2876b795e931ee90)
+        ;
+
+        
+    
+    
+                marker_7e646c5aaecb4cfbad7cdba40cb7787e.setIcon(icon_8970183c2df9f3eaffaee11365b81952);
+            
+    
+            var marker_345335619decc1a2ddaa28d42feafecc = L.marker(
+                [40.427899999999994, -86.9061],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_68018cdcdf622d54817e0ab76170a15a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8cbc657f41aa12b4d54e99e0cb2c9561 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_bc97a5ab0f3c57a6802956a048b0a3ae = $(`<div id="html_bc97a5ab0f3c57a6802956a048b0a3ae" style="width: 100.0%; height: 100.0%;">Vehicle 8</div>`)[0];
+                popup_8cbc657f41aa12b4d54e99e0cb2c9561.setContent(html_bc97a5ab0f3c57a6802956a048b0a3ae);
+            
+        
+
+        marker_345335619decc1a2ddaa28d42feafecc.bindPopup(popup_8cbc657f41aa12b4d54e99e0cb2c9561)
+        ;
+
+        
+    
+    
+                marker_345335619decc1a2ddaa28d42feafecc.setIcon(icon_68018cdcdf622d54817e0ab76170a15a);
+            
+    
+            var marker_324abbc1fdf1ea8cfe0ff01c0e818460 = L.marker(
+                [40.4289, -86.9051],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_32255be7bcc52d4cafaaf1e3352a7862 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ab88e17cca1a9d003e8dda6dc7314f38 = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_72fe4cc56bd67c2c24f4ea8e37fa01a2 = $(`<div id="html_72fe4cc56bd67c2c24f4ea8e37fa01a2" style="width: 100.0%; height: 100.0%;">Vehicle 9</div>`)[0];
+                popup_ab88e17cca1a9d003e8dda6dc7314f38.setContent(html_72fe4cc56bd67c2c24f4ea8e37fa01a2);
+            
+        
+
+        marker_324abbc1fdf1ea8cfe0ff01c0e818460.bindPopup(popup_ab88e17cca1a9d003e8dda6dc7314f38)
+        ;
+
+        
+    
+    
+                marker_324abbc1fdf1ea8cfe0ff01c0e818460.setIcon(icon_32255be7bcc52d4cafaaf1e3352a7862);
+            
+    
+            var marker_1ebf90d3dee5b7fea07cd92f3a21de23 = L.marker(
+                [40.429899999999996, -86.9041],
+                {
+}
+            ).addTo(map_d5e0f51c91a27100c07c850a412b8cea);
+        
+    
+            var icon_1e67adc5832c4f6aada6f7b14875e727 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "car",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8067ca010fd0082cabf2ede0f21e688e = L.popup({
+  "maxWidth": "100%",
+});
+
+        
+            
+                var html_2ab536bf76ae65253e840776f03048c4 = $(`<div id="html_2ab536bf76ae65253e840776f03048c4" style="width: 100.0%; height: 100.0%;">Vehicle 10</div>`)[0];
+                popup_8067ca010fd0082cabf2ede0f21e688e.setContent(html_2ab536bf76ae65253e840776f03048c4);
+            
+        
+
+        marker_1ebf90d3dee5b7fea07cd92f3a21de23.bindPopup(popup_8067ca010fd0082cabf2ede0f21e688e)
+        ;
+
+        
+    
+    
+                marker_1ebf90d3dee5b7fea07cd92f3a21de23.setIcon(icon_1e67adc5832c4f6aada6f7b14875e727);
+            
+</script>
+</html>
