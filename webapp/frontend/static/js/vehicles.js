@@ -1,438 +1,471 @@
-// Vehicle Management JavaScript
-class VehicleManager {
+/**
+ * Vehicle Tracking Page Logic
+ */
+
+class VehicleTracker {
     constructor() {
         this.vehicles = [];
-        this.selectedVehicleId = null;
-        this.wsClient = null;
+        this.filteredVehicles = [];
+        this.chargingStations = [];
+        this.orders = [];
+        this.autoRefresh = true;
+        this.refreshInterval = null;
+        
         this.init();
     }
-
+    
     init() {
-        // Initialize WebSocket connection
-        this.initWebSocket();
+        console.log('Initializing Vehicle Tracker...');
         
-        // Setup event listeners
-        this.setupEventListeners();
+        // Setup event handlers
+        this.setupEventHandlers();
         
-        // Initial data load
-        this.requestVehicleData();
+        // Setup WebSocket connection
+        this.setupWebSocket();
+        
+        // Initial data fetch
+        this.fetchVehicleData();
+        
+        // Start auto refresh
+        this.startAutoRefresh();
+        
+        // Check for highlight parameter
+        this.checkHighlightParameter();
     }
-
-    initWebSocket() {
-        // Reuse the existing WebSocket utility
-        if (typeof WebSocketClient !== 'undefined') {
-            this.wsClient = new WebSocketClient();
-            this.wsClient.onMessage = (data) => this.handleWebSocketMessage(data);
-            this.wsClient.onConnect = () => {
-                updateConnectionStatus(true);
-                this.requestVehicleData();
-            };
-            this.wsClient.onDisconnect = () => {
-                updateConnectionStatus(false);
-            };
-        }
-    }
-
-    setupEventListeners() {
-        // Search functionality
-        document.getElementById('searchVehicle').addEventListener('input', () => {
-            this.filterVehicles();
+    
+    setupEventHandlers() {
+        // Manual refresh button
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.fetchVehicleData();
         });
-
-        // Status filter
-        document.getElementById('statusFilter').addEventListener('change', () => {
-            this.filterVehicles();
-        });
-
-        // Battery filter
-        document.getElementById('batteryFilter').addEventListener('change', () => {
-            this.filterVehicles();
-        });
-
+        
         // Auto refresh toggle
-        document.getElementById('autoRefresh').addEventListener('change', (e) => {
-            if (e.target.checked) {
-                this.startAutoRefresh();
-            } else {
-                this.stopAutoRefresh();
-            }
+        const autoRefreshBtn = document.getElementById('autoRefreshBtn');
+        autoRefreshBtn.addEventListener('click', () => {
+            this.toggleAutoRefresh();
+        });
+        
+        // Filters
+        document.getElementById('statusFilter').addEventListener('change', () => {
+            this.applyFilters();
+        });
+        
+        document.getElementById('vehicleSearch').addEventListener('input', () => {
+            this.applyFilters();
         });
     }
-
-    handleWebSocketMessage(data) {
-        if (data.type === 'simulation_data' && data.vehicles) {
-            this.vehicles = data.vehicles;
-            this.updateVehicleDisplay();
-            this.updateStatistics();
-        }
-    }
-
-    requestVehicleData() {
-        if (this.wsClient && this.wsClient.isConnected()) {
-            this.wsClient.send({
-                type: 'get_status'
+    
+    setupWebSocket() {
+        if (window.simulationWS) {
+            // Handle simulation state updates
+            window.simulationWS.on('simulation_state', (data) => {
+                this.updateData(data);
             });
         }
     }
-
-    updateVehicleDisplay() {
-        const tbody = document.getElementById('vehicleTableBody');
+    
+    async fetchVehicleData() {
+        try {
+            const response = await fetch('/api/simulation/state');
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                this.updateData(result.data);
+            } else {
+                console.warn('No simulation data available');
+                this.showNoData();
+            }
+        } catch (error) {
+            console.error('Error fetching vehicle data:', error);
+            this.showError('Failed to load vehicle data');
+        }
+    }
+    
+    updateData(data) {
+        this.vehicles = data.vehicles || [];
+        this.chargingStations = data.charging_stations || [];
+        this.orders = data.orders || [];
         
-        if (!this.vehicles || this.vehicles.length === 0) {
+        this.updateStatistics();
+        this.applyFilters();
+    }
+    
+    updateStatistics() {
+        const statusCounts = this.getStatusCounts();
+        
+        document.getElementById('totalVehicles').textContent = this.vehicles.length;
+        document.getElementById('idleVehicles').textContent = statusCounts.idle;
+        document.getElementById('busyVehicles').textContent = 
+            statusCounts.to_pickup + statusCounts.with_passenger;
+        document.getElementById('chargingVehicles').textContent = 
+            statusCounts.charging + statusCounts.to_charging;
+    }
+    
+    getStatusCounts() {
+        const counts = {
+            idle: 0,
+            to_pickup: 0,
+            with_passenger: 0,
+            to_charging: 0,
+            charging: 0
+        };
+        
+        this.vehicles.forEach(vehicle => {
+            if (counts.hasOwnProperty(vehicle.status)) {
+                counts[vehicle.status]++;
+            }
+        });
+        
+        return counts;
+    }
+    
+    applyFilters() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('vehicleSearch').value.toLowerCase();
+        
+        this.filteredVehicles = this.vehicles.filter(vehicle => {
+            const matchesStatus = !statusFilter || vehicle.status === statusFilter;
+            const matchesSearch = !searchTerm || 
+                vehicle.vehicle_id.toLowerCase().includes(searchTerm);
+            
+            return matchesStatus && matchesSearch;
+        });
+        
+        this.renderVehicleTable();
+    }
+    
+    renderVehicleTable() {
+        const tbody = document.getElementById('vehiclesTableBody');
+        
+        if (this.filteredVehicles.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
-                        <i class="fas fa-car fa-2x mb-2"></i><br>
-                        No vehicles available. Start simulation first.
+                    <td colspan="8" class="text-center text-muted">
+                        <i class="fas fa-search"></i> No vehicles found matching criteria
                     </td>
                 </tr>
             `;
             return;
         }
-
-        tbody.innerHTML = this.vehicles.map(vehicle => this.createVehicleRow(vehicle)).join('');
         
-        // Re-select the previously selected vehicle
-        if (this.selectedVehicleId) {
-            const selectedRow = document.querySelector(`[data-vehicle-id="${this.selectedVehicleId}"]`);
-            if (selectedRow) {
-                selectedRow.classList.add('vehicle-selected');
-                this.showVehicleDetails(this.selectedVehicleId);
-            }
-        }
+        tbody.innerHTML = this.filteredVehicles.map(vehicle => 
+            this.renderVehicleRow(vehicle)
+        ).join('');
     }
-
-    createVehicleRow(vehicle) {
-        const statusInfo = this.getStatusInfo(vehicle);
-        const batteryInfo = this.getBatteryInfo(vehicle);
-        const position = `(${vehicle.position.lat.toFixed(3)}, ${vehicle.position.lng.toFixed(3)})`;
-        const currentTask = this.getCurrentTask(vehicle);
-
+    
+    renderVehicleRow(vehicle) {
+        const statusInfo = this.getStatusInfo(vehicle.status);
+        const position = `${vehicle.position[1].toFixed(4)}, ${vehicle.position[0].toFixed(4)}`;
+        const batteryColor = this.getBatteryColor(vehicle.battery_percentage);
+        const currentOrder = this.getCurrentOrder(vehicle);
+        const chargingStation = this.getChargingStation(vehicle);
+        const lastUpdate = new Date().toLocaleTimeString();
+        
         return `
-            <tr class="vehicle-row" data-vehicle-id="${vehicle.id}" onclick="vehicleManager.selectVehicle('${vehicle.id}')">
-                <td><strong>${vehicle.id}</strong></td>
+            <tr data-vehicle-id="${vehicle.vehicle_id}">
                 <td>
-                    <i class="${statusInfo.icon} ${statusInfo.class}"></i>
-                    ${statusInfo.text}
+                    <strong>${vehicle.vehicle_id}</strong>
+                </td>
+                <td>
+                    <span class="badge bg-${statusInfo.color}">
+                        <i class="${statusInfo.icon}"></i> ${statusInfo.text}
+                    </span>
                 </td>
                 <td>
                     <div class="d-flex align-items-center">
-                        <div class="progress flex-grow-1 me-2" style="height: 8px;">
-                            <div class="progress-bar ${batteryInfo.class}" 
+                        <div class="progress me-2" style="width: 60px; height: 8px;">
+                            <div class="progress-bar bg-${batteryColor}" 
                                  style="width: ${vehicle.battery_percentage}%"></div>
                         </div>
-                        <small class="${batteryInfo.textClass}">${vehicle.battery_percentage}%</small>
+                        <small>${vehicle.battery_percentage.toFixed(1)}%</small>
                     </div>
                 </td>
-                <td><small class="text-muted">${position}</small></td>
-                <td>${currentTask}</td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" onclick="vehicleManager.locateVehicle('${vehicle.id}')">
-                        <i class="fas fa-map-marker-alt"></i>
+                    <small class="text-muted">${position}</small>
+                </td>
+                <td>
+                    ${currentOrder || '<span class="text-muted">-</span>'}
+                </td>
+                <td>
+                    ${chargingStation || '<span class="text-muted">-</span>'}
+                </td>
+                <td>
+                    <small class="text-muted">${lastUpdate}</small>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" 
+                            onclick="vehicleTracker.showVehicleDetail('${vehicle.vehicle_id}')">
+                        <i class="fas fa-info-circle"></i> Details
                     </button>
                 </td>
             </tr>
         `;
     }
-
-    getStatusInfo(vehicle) {
+    
+    getStatusInfo(status) {
         const statusMap = {
-            'idle': { 
-                icon: 'fas fa-pause-circle', 
-                class: 'status-idle', 
-                text: 'Idle' 
-            },
-            'to_pickup': { 
-                icon: 'fas fa-arrow-right', 
-                class: 'status-to-pickup', 
-                text: 'To Pickup' 
-            },
-            'with_passenger': { 
-                icon: 'fas fa-user', 
-                class: 'status-with-passenger', 
-                text: 'With Passenger' 
-            },
-            'to_charging': { 
-                icon: 'fas fa-battery-quarter', 
-                class: 'status-to-charging', 
-                text: 'To Charging' 
-            },
-            'charging': { 
-                icon: 'fas fa-bolt', 
-                class: 'status-charging', 
-                text: 'Charging' 
-            }
+            'idle': { color: 'success', icon: 'fas fa-check-circle', text: 'Idle' },
+            'to_pickup': { color: 'primary', icon: 'fas fa-arrow-right', text: 'To Pickup' },
+            'with_passenger': { color: 'warning', icon: 'fas fa-user', text: 'With Passenger' },
+            'to_charging': { color: 'danger', icon: 'fas fa-arrow-right', text: 'To Charging' },
+            'charging': { color: 'info', icon: 'fas fa-charging-station', text: 'Charging' }
         };
-
-        return statusMap[vehicle.status] || { 
-            icon: 'fas fa-question-circle', 
-            class: 'text-muted', 
-            text: vehicle.status 
-        };
-    }
-
-    getBatteryInfo(vehicle) {
-        const battery = vehicle.battery_percentage;
-        if (battery > 60) {
-            return { class: 'bg-success', textClass: 'battery-high' };
-        } else if (battery > 20) {
-            return { class: 'bg-warning', textClass: 'battery-medium' };
-        } else {
-            return { class: 'bg-danger', textClass: 'battery-low' };
-        }
-    }
-
-    getCurrentTask(vehicle) {
-        if (vehicle.current_order_id) {
-            return `<span class="badge bg-info">Order: ${vehicle.current_order_id}</span>`;
-        } else if (vehicle.target_charging_station) {
-            return `<span class="badge bg-purple">Station: ${vehicle.target_charging_station}</span>`;
-        } else {
-            return '<span class="text-muted">-</span>';
-        }
-    }
-
-    selectVehicle(vehicleId) {
-        // Remove previous selection
-        document.querySelectorAll('.vehicle-selected').forEach(row => {
-            row.classList.remove('vehicle-selected');
-        });
-
-        // Add selection to clicked row
-        const row = document.querySelector(`[data-vehicle-id="${vehicleId}"]`);
-        if (row) {
-            row.classList.add('vehicle-selected');
-            this.selectedVehicleId = vehicleId;
-            this.showVehicleDetails(vehicleId);
-        }
-    }
-
-    showVehicleDetails(vehicleId) {
-        const vehicle = this.vehicles.find(v => v.id === vehicleId);
-        if (!vehicle) return;
-
-        const detailsPanel = document.getElementById('vehicleDetails');
-        const statusInfo = this.getStatusInfo(vehicle);
         
-        detailsPanel.innerHTML = `
-            <div class="vehicle-details">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6><i class="fas fa-car"></i> Vehicle ${vehicle.id}</h6>
-                    <span class="badge ${statusInfo.class.replace('status-', 'bg-')}">${statusInfo.text}</span>
+        return statusMap[status] || { color: 'secondary', icon: 'fas fa-question', text: 'Unknown' };
+    }
+    
+    getBatteryColor(percentage) {
+        if (percentage > 60) return 'success';
+        if (percentage > 30) return 'warning';
+        return 'danger';
+    }
+    
+    getCurrentOrder(vehicle) {
+        if (!vehicle.current_order_id) return null;
+        
+        const order = this.orders.find(o => o.order_id === vehicle.current_order_id);
+        if (!order) return `<span class="text-primary">Order ${vehicle.current_order_id}</span>`;
+        
+        return `
+            <span class="text-primary">Order ${order.order_id}</span><br>
+            <small class="text-muted">${order.status}</small>
+        `;
+    }
+    
+    getChargingStation(vehicle) {
+        if (vehicle.status !== 'charging' && vehicle.status !== 'to_charging') {
+            return null;
+        }
+        
+        // Simple logic: find nearest charging station as target
+        if (this.chargingStations.length > 0) {
+            const nearestStation = this.findNearestChargingStation(vehicle.position);
+            if (nearestStation) {
+                return `
+                    <a href="#" class="text-decoration-none" onclick="vehicleTracker.showChargingStationDetails('${nearestStation.station_id}')">
+                        <span class="text-info">${nearestStation.station_id}</span>
+                    </a><br>
+                    <small class="text-muted">${nearestStation.available_slots}/${nearestStation.total_slots} available</small>
+                `;
+            }
+        }
+        
+        return `<span class="text-muted">Finding station...</span>`;
+    }
+    
+    findNearestChargingStation(vehiclePosition) {
+        if (this.chargingStations.length === 0) return null;
+        
+        let nearest = this.chargingStations[0];
+        let minDistance = this.calculateDistance(vehiclePosition, nearest.position);
+        
+        this.chargingStations.forEach(station => {
+            const distance = this.calculateDistance(vehiclePosition, station.position);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearest = station;
+            }
+        });
+        
+        return nearest;
+    }
+    
+    calculateDistance(pos1, pos2) {
+        const [lon1, lat1] = pos1;
+        const [lon2, lat2] = pos2;
+        return Math.sqrt(Math.pow(lon2 - lon1, 2) + Math.pow(lat2 - lat1, 2));
+    }
+    
+    showVehicleDetail(vehicleId) {
+        const vehicle = this.vehicles.find(v => v.vehicle_id === vehicleId);
+        if (!vehicle) return;
+        
+        const modalContent = document.getElementById('vehicleDetailContent');
+        modalContent.innerHTML = this.renderVehicleDetailContent(vehicle);
+        
+        const modal = new bootstrap.Modal(document.getElementById('vehicleDetailModal'));
+        modal.show();
+    }
+    
+    renderVehicleDetailContent(vehicle) {
+        const statusInfo = this.getStatusInfo(vehicle.status);
+        const currentOrder = this.getCurrentOrder(vehicle);
+        const chargingStation = this.getChargingStation(vehicle);
+        
+        return `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-info-circle"></i> Basic Information</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Vehicle ID:</strong></td>
+                            <td>${vehicle.vehicle_id}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>
+                                <span class="badge bg-${statusInfo.color}">
+                                    <i class="${statusInfo.icon}"></i> ${statusInfo.text}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Battery:</strong></td>
+                            <td>
+                                <div class="progress" style="height: 12px;">
+                                    <div class="progress-bar bg-${this.getBatteryColor(vehicle.battery_percentage)}" 
+                                         style="width: ${vehicle.battery_percentage}%">
+                                        ${vehicle.battery_percentage.toFixed(1)}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Position:</strong></td>
+                            <td>
+                                Longitude: ${vehicle.position[0].toFixed(6)}<br>
+                                Latitude: ${vehicle.position[1].toFixed(6)}
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                
-                <div class="row mb-3">
-                    <div class="col-6">
-                        <strong>Battery Level</strong><br>
-                        <div class="progress mb-1" style="height: 10px;">
-                            <div class="progress-bar ${this.getBatteryInfo(vehicle).class}" 
-                                 style="width: ${vehicle.battery_percentage}%"></div>
-                        </div>
-                        <small class="${this.getBatteryInfo(vehicle).textClass}">
-                            ${vehicle.battery_percentage}% (${(vehicle.battery_kwh || 0).toFixed(1)} kWh)
-                        </small>
-                    </div>
-                    <div class="col-6">
-                        <strong>Speed</strong><br>
-                        <span class="h5">${(vehicle.speed || 0).toFixed(1)}</span>
-                        <small class="text-muted">km/h</small>
-                    </div>
+                <div class="col-md-6">
+                    <h6><i class="fas fa-tasks"></i> Task Information</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Current Order:</strong></td>
+                            <td>${currentOrder || '<span class="text-muted">None</span>'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Charging Station:</strong></td>
+                            <td>${chargingStation || '<span class="text-muted">None</span>'}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Destination:</strong></td>
+                            <td>
+                                ${vehicle.destination ? 
+                                    `${vehicle.destination[1].toFixed(4)}, ${vehicle.destination[0].toFixed(4)}` : 
+                                    '<span class="text-muted">None</span>'
+                                }
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                
-                <div class="mb-3">
-                    <strong>Position</strong><br>
-                    <small class="text-muted">
-                        Lat: ${vehicle.position.lat.toFixed(6)}<br>
-                        Lng: ${vehicle.position.lng.toFixed(6)}
-                    </small>
-                </div>
-                
-                ${this.getTaskDetails(vehicle)}
-                
-                <div class="mb-3">
-                    <strong>Performance Today</strong><br>
-                    <small class="text-muted">
-                        • Distance: ${(vehicle.distance_traveled || 0).toFixed(1)} km<br>
-                        • Orders: ${vehicle.completed_orders || 0}<br>
-                        • Runtime: ${this.formatRuntime(vehicle.runtime || 0)}
-                    </small>
-                </div>
-                
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-primary flex-grow-1" onclick="vehicleManager.locateVehicle('${vehicle.id}')">
-                        <i class="fas fa-map-marker-alt"></i> Locate
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="vehicleManager.refreshVehicle('${vehicle.id}')">
-                        <i class="fas fa-sync"></i>
-                    </button>
+            </div>
+            
+            <div class="mt-3">
+                <h6><i class="fas fa-chart-line"></i> Real-time Status</h6>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    This vehicle was last updated at ${new Date().toLocaleString()}
                 </div>
             </div>
         `;
     }
-
-    getTaskDetails(vehicle) {
-        if (vehicle.current_order_id) {
-            return `
-                <div class="mb-3">
-                    <strong>Current Order</strong><br>
-                    <span class="badge bg-info mb-1">${vehicle.current_order_id}</span><br>
-                    <small class="text-muted">
-                        ${vehicle.order_status ? `Status: ${vehicle.order_status}` : ''}<br>
-                        ${vehicle.eta ? `ETA: ${vehicle.eta} min` : ''}
-                    </small>
-                </div>
-            `;
-        } else if (vehicle.target_charging_station) {
-            return `
-                <div class="mb-3">
-                    <strong>Charging Task</strong><br>
-                    <span class="badge bg-purple mb-1">Station: ${vehicle.target_charging_station}</span><br>
-                    <small class="text-muted">
-                        ${vehicle.charging_eta ? `ETA: ${vehicle.charging_eta} min` : ''}
-                    </small>
-                </div>
-            `;
-        } else {
-            return `
-                <div class="mb-3">
-                    <strong>Current Task</strong><br>
-                    <span class="text-muted">No active task</span>
-                </div>
-            `;
-        }
-    }
-
-    formatRuntime(seconds) {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        return `${hours}h ${minutes}m`;
-    }
-
-    updateStatistics() {
-        const stats = this.calculateStatistics();
-        
-        document.getElementById('vehicleCount').textContent = `${stats.total} Vehicles`;
-        document.getElementById('idleCount').textContent = stats.idle;
-        document.getElementById('activeCount').textContent = stats.active;
-        document.getElementById('chargingCount').textContent = stats.charging;
-        document.getElementById('lowBatteryCount').textContent = stats.lowBattery;
-    }
-
-    calculateStatistics() {
-        if (!this.vehicles) {
-            return { total: 0, idle: 0, active: 0, charging: 0, lowBattery: 0 };
-        }
-
-        const stats = {
-            total: this.vehicles.length,
-            idle: 0,
-            active: 0,
-            charging: 0,
-            lowBattery: 0
-        };
-
-        this.vehicles.forEach(vehicle => {
-            if (vehicle.status === 'idle') stats.idle++;
-            if (['to_pickup', 'with_passenger'].includes(vehicle.status)) stats.active++;
-            if (['charging', 'to_charging'].includes(vehicle.status)) stats.charging++;
-            if (vehicle.battery_percentage < 20) stats.lowBattery++;
-        });
-
-        return stats;
-    }
-
-    filterVehicles() {
-        const searchTerm = document.getElementById('searchVehicle').value.toLowerCase();
-        const statusFilter = document.getElementById('statusFilter').value;
-        const batteryFilter = document.getElementById('batteryFilter').value;
-
-        const rows = document.querySelectorAll('.vehicle-row');
-        
-        rows.forEach(row => {
-            const vehicleId = row.dataset.vehicleId;
-            const vehicle = this.vehicles.find(v => v.id === vehicleId);
-            
-            if (!vehicle) {
-                row.style.display = 'none';
-                return;
-            }
-
-            let show = true;
-
-            // Search filter
-            if (searchTerm && !vehicle.id.toLowerCase().includes(searchTerm)) {
-                show = false;
-            }
-
-            // Status filter
-            if (statusFilter && vehicle.status !== statusFilter) {
-                show = false;
-            }
-
-            // Battery filter
-            if (batteryFilter) {
-                const battery = vehicle.battery_percentage;
-                if (batteryFilter === 'high' && battery <= 60) show = false;
-                if (batteryFilter === 'medium' && (battery <= 20 || battery > 60)) show = false;
-                if (batteryFilter === 'low' && battery >= 20) show = false;
-            }
-
-            row.style.display = show ? '' : 'none';
-        });
-    }
-
-    locateVehicle(vehicleId) {
-        // This would integrate with a map if available
-        const vehicle = this.vehicles.find(v => v.id === vehicleId);
-        if (vehicle) {
-            alert(`Vehicle ${vehicleId} is located at:\nLat: ${vehicle.position.lat}\nLng: ${vehicle.position.lng}`);
-        }
-    }
-
-    refreshVehicle(vehicleId) {
-        this.requestVehicleData();
-    }
-
-    startAutoRefresh() {
-        if (this.autoRefreshInterval) {
-            clearInterval(this.autoRefreshInterval);
-        }
-        
-        this.autoRefreshInterval = setInterval(() => {
-            this.requestVehicleData();
-        }, 2000); // Refresh every 2 seconds
-    }
-
-    stopAutoRefresh() {
-        if (this.autoRefreshInterval) {
-            clearInterval(this.autoRefreshInterval);
-            this.autoRefreshInterval = null;
-        }
-    }
-}
-
-// Global functions
-function clearFilters() {
-    document.getElementById('searchVehicle').value = '';
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('batteryFilter').value = '';
-    vehicleManager.filterVehicles();
-}
-
-function updateConnectionStatus(connected) {
-    const statusElement = document.getElementById('connectionStatus');
-    if (connected) {
-        statusElement.innerHTML = '<i class="fas fa-circle text-success"></i> Connected';
-    } else {
-        statusElement.innerHTML = '<i class="fas fa-circle text-danger"></i> Disconnected';
-    }
-}
-
-// Initialize when page loads
-let vehicleManager;
-document.addEventListener('DOMContentLoaded', function() {
-    vehicleManager = new VehicleManager();
     
-    // Start auto refresh by default
-    vehicleManager.startAutoRefresh();
+    toggleAutoRefresh() {
+        this.autoRefresh = !this.autoRefresh;
+        const btn = document.getElementById('autoRefreshBtn');
+        
+        if (this.autoRefresh) {
+            btn.innerHTML = '<i class="fas fa-pause"></i> Pause Refresh';
+            btn.className = 'btn btn-outline-warning';
+            this.startAutoRefresh();
+        } else {
+            btn.innerHTML = '<i class="fas fa-play"></i> Auto Refresh';
+            btn.className = 'btn btn-outline-secondary';
+            this.stopAutoRefresh();
+        }
+    }
+    
+    startAutoRefresh() {
+        if (this.autoRefresh && !this.refreshInterval) {
+            this.refreshInterval = setInterval(() => {
+                this.fetchVehicleData();
+            }, 3000); // Refresh every 3 seconds
+        }
+    }
+    
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+        }
+    }
+    
+    showNoData() {
+        const tbody = document.getElementById('vehiclesTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-muted">
+                    <i class="fas fa-exclamation-triangle"></i> No simulation data available. Please create and start a simulation first.
+                </td>
+            </tr>
+        `;
+        
+        // Clear statistics
+        document.getElementById('totalVehicles').textContent = '0';
+        document.getElementById('idleVehicles').textContent = '0';
+        document.getElementById('busyVehicles').textContent = '0';
+        document.getElementById('chargingVehicles').textContent = '0';
+    }
+    
+    showError(message) {
+        const tbody = document.getElementById('vehiclesTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center text-danger">
+                    <i class="fas fa-exclamation-circle"></i> ${message}
+                </td>
+            </tr>
+        `;
+    }
+    
+    checkHighlightParameter() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const highlightVehicle = urlParams.get('highlight');
+        
+        if (highlightVehicle) {
+            // Set search filter to the highlighted vehicle
+            document.getElementById('vehicleSearch').value = highlightVehicle;
+            this.highlightVehicleId = highlightVehicle;
+            
+            // Apply filters to show the highlighted vehicle
+            setTimeout(() => {
+                this.applyFilters();
+                this.scrollToHighlightedVehicle();
+            }, 1000); // Wait for data to load
+        }
+    }
+    
+    scrollToHighlightedVehicle() {
+        if (this.highlightVehicleId) {
+            const vehicleRow = document.querySelector(`[data-vehicle-id="${this.highlightVehicleId}"]`);
+            if (vehicleRow) {
+                vehicleRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                vehicleRow.classList.add('table-warning');
+                
+                // Remove highlight after 5 seconds
+                setTimeout(() => {
+                    vehicleRow.classList.remove('table-warning');
+                }, 5000);
+            }
+        }
+    }
+    
+    showChargingStationDetails(stationId) {
+        // Open charging station page with specific station highlighted
+        window.open(`/charging-stations?highlight=${stationId}`, '_blank');
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Setup WebSocket connection if not already done
+    if (window.simulationWS) {
+        window.simulationWS.connect();
+    }
+    
+    // Initialize vehicle tracker
+    window.vehicleTracker = new VehicleTracker();
 }); 

@@ -193,12 +193,17 @@ class SimulationService:
             # 将投影坐标转换为经纬度坐标 (Leaflet需要)
             lon, lat = self.engine.map_manager.projected_to_latlon(vehicle.position)
             
+            # Extract current order ID from vehicle task
+            current_order_id = None
+            if vehicle.current_task and vehicle.current_task.get('type') == 'order':
+                current_order_id = vehicle.current_task.get('order_id')
+            
             vehicles.append(VehicleData(
                 vehicle_id=vehicle.vehicle_id,
                 position=[lon, lat],  # [longitude, latitude] for Leaflet
                 status=vehicle.status,
                 battery_percentage=vehicle.battery_percentage,
-                current_order_id=getattr(vehicle, 'current_order_id', None),
+                current_order_id=current_order_id,
                 destination=None  # TODO: add destination if available
             ))
         
@@ -231,9 +236,14 @@ class SimulationService:
                 pickup_position=[pickup_lon, pickup_lat],  # [longitude, latitude]
                 dropoff_position=[dropoff_lon, dropoff_lat],  # [longitude, latitude]
                 status=order.status,
-                assigned_vehicle_id=getattr(order, 'assigned_vehicle_id', None),
-                creation_time=getattr(order, 'creation_time', 0),
-                completion_time=getattr(order, 'completion_time', None)
+                assigned_vehicle_id=order.assigned_vehicle_id,
+                creation_time=order.creation_time,
+                assignment_time=order.assignment_time,
+                pickup_time=order.pickup_time,
+                completion_time=order.completion_time,
+                estimated_distance=order.estimated_distance,
+                final_price=order.final_price,
+                pickup_completed=(order.pickup_time is not None)
             ))
         
         # Get statistics

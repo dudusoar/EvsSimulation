@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vehicle Tracking - EV Simulation</title>
+    <title>Order Tracking - EV Simulation</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -13,30 +13,6 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
-    
-    <style>
-        .vehicle-row:hover {
-            background-color: rgba(0,123,255,0.1);
-            cursor: pointer;
-        }
-        .vehicle-selected {
-            background-color: rgba(0,123,255,0.2) !important;
-        }
-        .status-idle { color: #28a745; }
-        .status-to-pickup { color: #007bff; }
-        .status-with-passenger { color: #fd7e14; }
-        .status-to-charging { color: #dc3545; }
-        .status-charging { color: #6f42c1; }
-        
-        .battery-high { color: #28a745; }
-        .battery-medium { color: #ffc107; }
-        .battery-low { color: #dc3545; }
-        
-        .details-panel {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -47,10 +23,10 @@
             </a>
             
             <div class="navbar-nav me-auto">
-                <a class="nav-link active" href="/vehicles">
+                <a class="nav-link" href="/vehicles" target="_blank">
                     <i class="fas fa-car"></i> Vehicle Tracking
                 </a>
-                <a class="nav-link" href="/orders" target="_blank">
+                <a class="nav-link active" href="/orders">
                     <i class="fas fa-clipboard-list"></i> Order Tracking
                 </a>
                 <a class="nav-link" href="/charging-stations" target="_blank">
@@ -74,7 +50,7 @@
         <div class="row mb-3">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h2><i class="fas fa-car"></i> Vehicle Tracking</h2>
+                    <h2><i class="fas fa-clipboard-list"></i> Order Tracking</h2>
                     <div>
                         <button class="btn btn-outline-primary" id="refreshBtn">
                             <i class="fas fa-sync-alt"></i> Refresh
@@ -94,26 +70,11 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
-                                <h6 class="card-title">Total Vehicles</h6>
-                                <h4 class="mb-0" id="totalVehicles">-</h4>
+                                <h6 class="card-title">Total Orders</h6>
+                                <h4 class="mb-0" id="totalOrders">-</h4>
                             </div>
                             <div class="text-white-50">
-                                <i class="fas fa-car fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card text-white bg-success">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <h6 class="card-title">Idle Vehicles</h6>
-                                <h4 class="mb-0" id="idleVehicles">-</h4>
-                            </div>
-                            <div class="text-white-50">
-                                <i class="fas fa-check-circle fa-2x"></i>
+                                <i class="fas fa-clipboard-list fa-2x"></i>
                             </div>
                         </div>
                     </div>
@@ -124,11 +85,11 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
-                                <h6 class="card-title">In Service</h6>
-                                <h4 class="mb-0" id="busyVehicles">-</h4>
+                                <h6 class="card-title">Pending Orders</h6>
+                                <h4 class="mb-0" id="pendingOrders">-</h4>
                             </div>
                             <div class="text-white-50">
-                                <i class="fas fa-user fa-2x"></i>
+                                <i class="fas fa-clock fa-2x"></i>
                             </div>
                         </div>
                     </div>
@@ -139,11 +100,26 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1">
-                                <h6 class="card-title">Charging</h6>
-                                <h4 class="mb-0" id="chargingVehicles">-</h4>
+                                <h6 class="card-title">Active Orders</h6>
+                                <h4 class="mb-0" id="activeOrders">-</h4>
                             </div>
                             <div class="text-white-50">
-                                <i class="fas fa-charging-station fa-2x"></i>
+                                <i class="fas fa-car-side fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title">Completed</h6>
+                                <h4 class="mb-0" id="completedOrders">-</h4>
+                            </div>
+                            <div class="text-white-50">
+                                <i class="fas fa-check-circle fa-2x"></i>
                             </div>
                         </div>
                     </div>
@@ -153,23 +129,27 @@
 
         <!-- Filters -->
         <div class="row mb-3">
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <div class="card">
                     <div class="card-body">
                         <h6 class="card-title">Filters</h6>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Status Filter</label>
                                 <select class="form-select" id="statusFilter">
                                     <option value="">All Status</option>
-                                    <option value="idle">Idle</option>
-                                    <option value="to_pickup">To Pickup</option>
-                                    <option value="with_passenger">With Passenger</option>
-                                    <option value="to_charging">To Charging</option>
-                                    <option value="charging">Charging</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="assigned">Assigned</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="form-label">Search Order ID</label>
+                                <input type="text" class="form-control" id="orderSearch" placeholder="Enter order ID...">
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label">Search Vehicle ID</label>
                                 <input type="text" class="form-control" id="vehicleSearch" placeholder="Enter vehicle ID...">
                             </div>
@@ -179,29 +159,29 @@
             </div>
         </div>
 
-        <!-- Vehicles Table -->
+        <!-- Orders Table -->
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5><i class="fas fa-list"></i> Vehicle Details</h5>
+                        <h5><i class="fas fa-list"></i> Order Details</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-striped table-hover">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>Vehicle ID</th>
+                                        <th>Order ID</th>
                                         <th>Status</th>
-                                        <th>Battery</th>
-                                        <th>Position</th>
-                                        <th>Current Order</th>
-                                        <th>Charging Station</th>
-                                        <th>Last Update</th>
+                                        <th>Assigned Vehicle</th>
+                                        <th>Pickup Location</th>
+                                        <th>Dropoff Location</th>
+                                        <th>Created Time <small>(sim)</small></th>
+                                        <th>Duration</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="vehiclesTableBody">
+                                <tbody id="ordersTableBody">
                                     <tr>
                                         <td colspan="8" class="text-center text-muted">
                                             <i class="fas fa-spinner fa-spin"></i> Loading...
@@ -216,17 +196,17 @@
         </div>
     </div>
 
-    <!-- Vehicle Detail Modal -->
-    <div class="modal fade" id="vehicleDetailModal" tabindex="-1" aria-hidden="true">
+    <!-- Order Detail Modal -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-car"></i> Vehicle Details
+                        <i class="fas fa-clipboard-list"></i> Order Details
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" id="vehicleDetailContent">
+                <div class="modal-body" id="orderDetailContent">
                     <div class="text-center">
                         <i class="fas fa-spinner fa-spin"></i> Loading...
                     </div>
@@ -240,6 +220,6 @@
     
     <!-- Custom JavaScript -->
     <script src="/static/js/websocket.js"></script>
-    <script src="/static/js/vehicles.js"></script>
+    <script src="/static/js/orders.js"></script>
 </body>
 </html> 

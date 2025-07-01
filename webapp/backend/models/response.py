@@ -33,7 +33,12 @@ class OrderData(BaseModel):
     status: str
     assigned_vehicle_id: Optional[str] = None
     creation_time: float
+    assignment_time: Optional[float] = None
+    pickup_time: Optional[float] = None
     completion_time: Optional[float] = None
+    estimated_distance: float = 0.0
+    final_price: float = 0.0
+    pickup_completed: bool = False
 
 
 class SimulationStats(BaseModel):

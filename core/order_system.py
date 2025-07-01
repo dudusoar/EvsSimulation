@@ -49,6 +49,11 @@ class OrderSystem:
     def _generate_initial_orders(self):
         """Pre-generate initial orders to ensure simulation starts with available orders"""
         print("Pre-generating initial orders...")
+        # Reset global order counter for new simulation
+        from models.order import _global_order_counter
+        import models.order
+        models.order._global_order_counter = 0
+        
         # Generate initial orders based on vehicle count to ensure sufficient workload
         num_vehicles = self.config.get('num_vehicles', 20)
         initial_order_count = min(num_vehicles // 2, 10)  # Generate half the number of vehicles, max 10

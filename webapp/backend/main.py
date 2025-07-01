@@ -50,6 +50,21 @@ async def root(request: Request):
     """Main application page"""
     return templates.TemplateResponse("index.html", {"request": request})
 
+@app.get("/vehicles")
+async def vehicles_page(request: Request):
+    """Vehicle tracking page"""
+    return templates.TemplateResponse("vehicles.html", {"request": request})
+
+@app.get("/orders")
+async def orders_page(request: Request):
+    """Order tracking page"""
+    return templates.TemplateResponse("orders.html", {"request": request})
+
+@app.get("/charging-stations")
+async def charging_stations_page(request: Request):
+    """Charging station tracking page"""
+    return templates.TemplateResponse("charging-stations.html", {"request": request})
+
 @app.get("/dashboard")
 async def dashboard(request: Request):
     """Simulation dashboard page"""
