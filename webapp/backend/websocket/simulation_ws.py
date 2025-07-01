@@ -153,6 +153,8 @@ async def handle_client_message(message: dict, websocket: WebSocket):
                 success = simulation_service.resume_simulation()
             elif command == "stop":
                 success = simulation_service.stop_simulation()
+            elif command == "restart":
+                success = simulation_service.restart_simulation()
             elif command == "speed":
                 multiplier = data.get("multiplier", 1.0)
                 success = simulation_service.set_speed_multiplier(multiplier)

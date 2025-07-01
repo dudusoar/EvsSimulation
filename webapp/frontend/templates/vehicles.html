@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicles Management - EV Simulation</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <style>
+        .vehicle-row:hover {
+            background-color: rgba(0,123,255,0.1);
+            cursor: pointer;
+        }
+        .vehicle-selected {
+            background-color: rgba(0,123,255,0.2) !important;
+        }
+        .status-idle { color: #28a745; }
+        .status-to-pickup { color: #007bff; }
+        .status-with-passenger { color: #fd7e14; }
+        .status-to-charging { color: #dc3545; }
+        .status-charging { color: #6f42c1; }
+        
+        .battery-high { color: #28a745; }
+        .battery-medium { color: #ffc107; }
+        .battery-low { color: #dc3545; }
+        
+        .details-panel {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-car-electric"></i> EV Simulation Dashboard
+            </a>
+            
+            <!-- Navigation Links -->
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a class="nav-link active" href="/vehicles">
+                    <i class="fas fa-car"></i> Vehicles
+                </a>
+                <a class="nav-link" href="#" onclick="alert('Coming Soon!')">
+                    <i class="fas fa-charging-station"></i> Charging Stations
+                </a>
+            </div>
+            
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text" id="connectionStatus">
+                    <i class="fas fa-circle text-secondary"></i> Connecting...
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <!-- Page Header -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-car"></i> Vehicle Management</h2>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                            <label class="form-check-label" for="autoRefresh">
+                                <i class="fas fa-sync-alt"></i> Auto Refresh
+                            </label>
+                        </div>
+                        <span class="badge bg-primary" id="vehicleCount">0 Vehicles</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search -->
+        <div class="row mb-3">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body py-2">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" id="searchVehicle" placeholder="Search vehicle ID...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="idle">Idle</option>
+                                    <option value="to_pickup">To Pickup</option>
+                                    <option value="with_passenger">With Passenger</option>
+                                    <option value="to_charging">To Charging</option>
+                                    <option value="charging">Charging</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="batteryFilter">
+                                    <option value="">All Battery</option>
+                                    <option value="high">High (>60%)</option>
+                                    <option value="medium">Medium (20-60%)</option>
+                                    <option value="low">Low (<20%)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-outline-secondary btn-sm w-100" onclick="clearFilters()">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body py-2">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <small class="text-muted">Idle</small><br>
+                                <span class="badge bg-success" id="idleCount">0</span>
+                            </div>
+                            <div class="col-3">
+                                <small class="text-muted">Active</small><br>
+                                <span class="badge bg-primary" id="activeCount">0</span>
+                            </div>
+                            <div class="col-3">
+                                <small class="text-muted">Charging</small><br>
+                                <span class="badge bg-purple" id="chargingCount">0</span>
+                            </div>
+                            <div class="col-3">
+                                <small class="text-muted">Low Battery</small><br>
+                                <span class="badge bg-danger" id="lowBatteryCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Vehicle List -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-list"></i> Vehicle List</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 600px;">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Status</th>
+                                        <th>Battery</th>
+                                        <th>Position</th>
+                                        <th>Current Task</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="vehicleTableBody">
+                                    <!-- Vehicles will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Details Panel -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle"></i> Vehicle Details</h5>
+                    </div>
+                    <div class="card-body details-panel" id="vehicleDetails">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-car fa-3x mb-3"></i>
+                            <p>Select a vehicle to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/vehicles.js"></script>
+</body>
+</html> 

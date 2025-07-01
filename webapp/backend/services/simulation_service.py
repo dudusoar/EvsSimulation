@@ -114,7 +114,29 @@ class SimulationService:
         self.is_paused = False
         if self.simulation_thread and self.simulation_thread.is_alive():
             self.simulation_thread.join(timeout=2.0)
+        
+        # Clear the engine instance to allow recreation
+        self.engine = None
+        self.current_state = None
+        print("Simulation stopped and engine cleared")
         return True
+    
+    def restart_simulation(self) -> bool:
+        """Restart simulation from beginning"""
+        # Stop current simulation  
+        self.stop_simulation()
+        
+        # Recreate engine with current config
+        try:
+            self.engine = SimulationEngine(self.config)
+            print("Resetting simulation...")
+            
+            # Start fresh simulation
+            return self.start_simulation()
+            
+        except Exception as e:
+            print(f"Error restarting simulation: {e}")
+            return False
     
     def set_speed_multiplier(self, multiplier: float) -> bool:
         """Set simulation speed multiplier"""
