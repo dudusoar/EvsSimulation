@@ -163,9 +163,12 @@ class SimulationService:
         # Get vehicles data
         vehicles = []
         for vehicle in self.engine.get_vehicles():
+            # 将投影坐标转换为经纬度坐标 (Leaflet需要)
+            lon, lat = self.engine.map_manager.projected_to_latlon(vehicle.position)
+            
             vehicles.append(VehicleData(
                 vehicle_id=vehicle.vehicle_id,
-                position=[vehicle.position[0], vehicle.position[1]],  # [lon, lat]
+                position=[lon, lat],  # [longitude, latitude] for Leaflet
                 status=vehicle.status,
                 battery_percentage=vehicle.battery_percentage,
                 current_order_id=getattr(vehicle, 'current_order_id', None),
@@ -175,9 +178,12 @@ class SimulationService:
         # Get charging stations data
         charging_stations = []
         for station in self.engine.get_charging_stations():
+            # 将投影坐标转换为经纬度坐标 (Leaflet需要)
+            lon, lat = self.engine.map_manager.projected_to_latlon(station.position)
+            
             charging_stations.append(ChargingStationData(
                 station_id=station.station_id,
-                position=[station.position[0], station.position[1]],  # [lon, lat]
+                position=[lon, lat],  # [longitude, latitude] for Leaflet
                 total_slots=station.total_slots,
                 available_slots=station.available_slots,
                 utilization_rate=(station.total_slots - station.available_slots) / station.total_slots
@@ -189,10 +195,14 @@ class SimulationService:
         all_orders = orders_info.get('pending', []) + orders_info.get('active', [])
         
         for order in all_orders:
+            # 将订单的上下车点坐标转换为经纬度坐标
+            pickup_lon, pickup_lat = self.engine.map_manager.projected_to_latlon(order.pickup_position)
+            dropoff_lon, dropoff_lat = self.engine.map_manager.projected_to_latlon(order.dropoff_position)
+            
             orders.append(OrderData(
                 order_id=order.order_id,
-                pickup_position=[order.pickup_position[0], order.pickup_position[1]],
-                dropoff_position=[order.dropoff_position[0], order.dropoff_position[1]],
+                pickup_position=[pickup_lon, pickup_lat],  # [longitude, latitude]
+                dropoff_position=[dropoff_lon, dropoff_lat],  # [longitude, latitude]
                 status=order.status,
                 assigned_vehicle_id=getattr(order, 'assigned_vehicle_id', None),
                 creation_time=getattr(order, 'creation_time', 0),
