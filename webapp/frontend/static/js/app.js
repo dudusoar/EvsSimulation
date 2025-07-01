@@ -5,6 +5,8 @@
 class EVSimulationApp {
     constructor() {
         this.isSimulationCreated = false;
+        this.isRunning = false;
+        this.isPaused = false;
         this.currentState = null;
         
         // Initialize when DOM is ready
@@ -197,6 +199,23 @@ class EVSimulationApp {
         
         if (success) {
             this.showSuccess(`${command.charAt(0).toUpperCase() + command.slice(1)} command executed successfully`);
+            // Update internal flags based on command
+            switch (command) {
+                case 'start':
+                case 'resume':
+                    this.isRunning = true;
+                    this.isPaused = false;
+                    break;
+                case 'pause':
+                    this.isRunning = false;
+                    this.isPaused = true;
+                    break;
+                case 'stop':
+                    this.isRunning = false;
+                    this.isPaused = false;
+                    this.isSimulationCreated = false;
+                    break;
+            }
             this.updateButtonStates();
         } else {
             this.showError(`${command.charAt(0).toUpperCase() + command.slice(1)} command failed: ${message}`);
@@ -209,14 +228,29 @@ class EVSimulationApp {
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
         
-        if (this.isSimulationCreated) {
-            createBtn.disabled = true;
-            startBtn.disabled = false;
-        } else {
+        if (!this.isSimulationCreated) {
+            // No simulation yet
             createBtn.disabled = false;
             startBtn.disabled = true;
             pauseBtn.disabled = true;
             stopBtn.disabled = true;
+            return;
+        }
+        // Simulation created
+        createBtn.disabled = true;
+        stopBtn.disabled = false;
+        if (this.isRunning) {
+            // Running → Pause allowed, Start disabled
+            startBtn.disabled = true;
+            pauseBtn.disabled = false;
+        } else if (this.isPaused) {
+            // Paused → Resume (Start) allowed, Pause disabled
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        } else {
+            // Created but not started yet
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
         }
     }
     
