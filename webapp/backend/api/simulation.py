@@ -27,7 +27,7 @@ async def create_simulation(config: SimulationConfig):
             return APIResponse(
                 success=False,
                 message="Failed to create simulation",
-                error="Unknown error during simulation creation"
+                error="Simulation already exists or unknown error"
             )
             
     except Exception as e:

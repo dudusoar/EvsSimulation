@@ -50,7 +50,12 @@ class SimulationService:
                 print(f"Error notifying subscriber: {e}")
     
     def create_simulation(self, config: SimulationConfig) -> bool:
-        """Create new simulation with given config"""
+        """Create new simulation with given config
+        Returns True if created, False if already exists or error"""
+        # Prevent duplicate creation
+        if self.engine is not None:
+            # Already initialized; refuse to recreate
+            return False
         try:
             # Update internal config
             self.config.update({

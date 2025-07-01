@@ -27,6 +27,9 @@ class EVSimulationApp {
         // Setup WebSocket message handlers
         this.setupWebSocketHandlers();
         
+        // Fetch initial simulation status
+        await this.fetchInitialStatus();
+        
         // Initialize map and charts
         this.initializeComponents();
         
@@ -273,6 +276,22 @@ class EVSimulationApp {
         toast.addEventListener('hidden.bs.toast', () => {
             container.removeChild(toast);
         });
+    }
+    
+    async fetchInitialStatus() {
+        try {
+            const resp = await fetch('/api/simulation/status');
+            const result = await resp.json();
+            if (result.success) {
+                const status = result.data;
+                if (status.has_engine) {
+                    this.isSimulationCreated = true;
+                    this.updateButtonStates();
+                }
+            }
+        } catch (err) {
+            console.warn('Unable to fetch initial simulation status', err);
+        }
     }
 }
 
