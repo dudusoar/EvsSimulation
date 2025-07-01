@@ -15,7 +15,7 @@ cache/
 
 # Log Files
 *.log
-realtime_visualizer.log
+# Removed realtime_visualizer.log (feature removed)
 
 # Dataset Directory (optional - uncomment if you don't want to track datasets)
 datasets/

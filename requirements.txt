@@ -13,6 +13,5 @@ tqdm==4.67.1
 # UI Framework dependencies  
 dearpygui==2.0.0
 pillow>=10.0.0
-folium>=0.20.0
 seaborn>=0.12.0
 

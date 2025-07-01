@@ -226,13 +226,18 @@ class MapManager:
         self.fig, self.ax = ox.plot_graph(
             self.projected_graph,
             node_size=0,
-            edge_linewidth=0.5,
+            edge_linewidth=1.0,  # Restored to reasonable thickness
             show=show_preview,
             close=False,
             bgcolor='white',
-            edge_color='gray'
+            edge_color='darkgray',  # Changed from 'gray' to 'darkgray' for better contrast
+            figsize=(15, 12)  # Increased from (12, 10) to (15, 12) for larger map display
         )
-        self.ax.set_title(self.location)
+        self.ax.set_title(self.location, fontsize=16, fontweight='bold', pad=20)
+        
+        # Adjust subplot parameters to give more space for the map
+        self.fig.subplots_adjust(left=0.05, right=0.95, top=0.93, bottom=0.07)
+        
         return self.fig, self.ax
     
     def plot_route(self, route_nodes: List[int], color: str = 'red', linewidth: float = 2):

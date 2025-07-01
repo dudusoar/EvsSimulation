@@ -58,22 +58,23 @@ class Visualizer:
         """Initialize graphics elements"""
         # Create vehicle graphics
         for vehicle in self.engine.get_vehicles():
-            # Vehicle marker - reduce size
+            # Vehicle marker - increase size for better visibility
             marker, = self.ax.plot(
                 [], [], 
                 marker='o', 
-                markersize=5,  # Changed from 8 to 5
+                markersize=6,  # Increased from 3 to 6
                 color=COLORS['vehicle']['idle'],
                 markeredgecolor='black',
-                markeredgewidth=0.5
+                markeredgewidth=0.8
             )
             
             # Battery text
             text = self.ax.text(
                 0, 0, '', 
-                fontsize=7,  # Changed from 8 to 7
+                fontsize=8,  # Increased from 6 to 8
                 ha='center', 
-                va='bottom'
+                va='bottom',
+                weight='bold'
             )
             
             self.vehicle_artists[vehicle.vehicle_id] = {
@@ -81,36 +82,37 @@ class Visualizer:
                 'text': text
             }
         
-        # Create charging station graphics - reduce size
+        # Create charging station graphics - increase size for better visibility
         for station in self.engine.get_charging_stations():
             marker, = self.ax.plot(
                 station.position[0], 
                 station.position[1],
                 marker='s',
-                markersize=7,  # Changed from 12 to 7
+                markersize=8,  # Increased from 4 to 8
                 color=COLORS['charging_station'],
                 markeredgecolor='black',
-                markeredgewidth=1
+                markeredgewidth=1.2
             )
             self.station_markers.append(marker)
         
-        # Create information text
+        # Create information text - repositioned to avoid overlap
         self.info_text = self.ax.text(
             0.02, 0.98, '', 
             transform=self.ax.transAxes,
-            fontsize=9,  # Changed from 10 to 9
+            fontsize=9,  # Increased back for better readability
             va='top',
             ha='left',
-            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='white', alpha=0.9, edgecolor='gray')
         )
         
+        # Position stats text at bottom right to avoid overlap
         self.stats_text = self.ax.text(
-            0.98, 0.98, '', 
+            0.98, 0.02, '',  # Changed from top (0.98) to bottom (0.02)
             transform=self.ax.transAxes,
-            fontsize=8,  # Changed from 9 to 8
-            va='top',
+            fontsize=8,  # Increased for better readability
+            va='bottom',  # Changed from 'top' to 'bottom'
             ha='right',
-            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8)
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='lightblue', alpha=0.9, edgecolor='darkblue')
         )
 
     # ============= Live Simulation Methods =============
@@ -159,10 +161,11 @@ class Visualizer:
                     print("\n🛑 Window closed, stopping simulation")
                     break
                 
-                # Control update frequency
+                # Control update frequency - much faster simulation speed!
                 elapsed = time.time() - step_start
-                if elapsed < update_interval:
-                    plt.pause(update_interval - elapsed)
+                target_interval = update_interval * 0.2  # Speed up by 5x! 
+                if elapsed < target_interval:
+                    plt.pause(target_interval - elapsed)
                 else:
                     plt.pause(0.001)  # Give GUI some time to respond
                 
@@ -328,7 +331,7 @@ class Visualizer:
                 battery_text += " C"  # Charging
             
             artists['text'].set_text(battery_text)
-            artists['text'].set_position((vehicle.position[0], vehicle.position[1] + 50))
+            artists['text'].set_position((vehicle.position[0], vehicle.position[1] + 50))  # Increased offset back to 50
     
     def _update_orders(self):
         """Update order display"""
@@ -358,24 +361,24 @@ class Visualizer:
                 # Create new markers
                 self.order_markers[order.order_id] = {}
                 
-                # Pickup point marker (triangle) - reduce size
+                # Pickup point marker (triangle) - increase size for better visibility
                 pickup_marker, = self.ax.plot(
                     order.pickup_position[0],
                     order.pickup_position[1],
                     marker='^',
-                    markersize=6,  # Changed from 10 to 6
+                    markersize=7,  # Increased from 4 to 7
                     color=COLORS['order']['pickup'],
                     markeredgecolor='black',
-                    markeredgewidth=0.5
+                    markeredgewidth=0.8
                 )
                 self.order_markers[order.order_id]['pickup'] = pickup_marker
                 
                 # Pickup point number text
                 pickup_text = self.ax.text(
                     order.pickup_position[0], 
-                    order.pickup_position[1] + 30,
+                    order.pickup_position[1] + 40,  # Increased offset from 25 to 40
                     f"#{order.order_id[-3:]}",  # Show last 3 digits of order ID
-                    fontsize=6,
+                    fontsize=7,  # Increased from 5 to 7
                     ha='center',
                     va='bottom',
                     color='darkblue',
@@ -383,24 +386,24 @@ class Visualizer:
                 )
                 self.order_markers[order.order_id]['pickup_text'] = pickup_text
                 
-                # Dropoff point marker (inverted triangle) - always show
+                # Dropoff point marker (inverted triangle) - increase size for better visibility
                 dropoff_marker, = self.ax.plot(
                     order.dropoff_position[0],
                     order.dropoff_position[1],
                     marker='v',
-                    markersize=6,  # Changed from 10 to 6
+                    markersize=7,  # Increased from 4 to 7
                     color=COLORS['order']['dropoff'],
                     markeredgecolor='black',
-                    markeredgewidth=0.5
+                    markeredgewidth=0.8
                 )
                 self.order_markers[order.order_id]['dropoff'] = dropoff_marker
                 
                 # Dropoff point number text
                 dropoff_text = self.ax.text(
                     order.dropoff_position[0], 
-                    order.dropoff_position[1] - 30,
+                    order.dropoff_position[1] - 40,  # Increased offset from 25 to 40
                     f"#{order.order_id[-3:]}",  # Show last 3 digits of order ID
-                    fontsize=6,
+                    fontsize=7,  # Increased from 5 to 7
                     ha='center',
                     va='top',
                     color='darkmagenta',
