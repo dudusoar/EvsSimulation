@@ -11,7 +11,8 @@ from datetime import datetime
 
 # Import existing simulation system
 from core.simulation_engine import SimulationEngine
-from config.simulation_config import SIMULATION_CONFIG
+from config.simulation_config import SIMULATION_CONFIG, get_config, load_yaml_config, convert_dict_to_yaml
+from config.yaml_config_manager import config_manager, SimulationConfigModel
 from webapp.backend.models.response import (
     VehicleData, ChargingStationData, OrderData, 
     SimulationStats, SimulationState, SimulationConfig
@@ -73,6 +74,101 @@ class SimulationService:
             
         except Exception as e:
             print(f"Error creating simulation: {e}")
+            return False
+    
+    def create_simulation_from_yaml(self, config_file: str = "default.yaml") -> bool:
+        """Create new simulation from YAML config file
+        
+        Args:
+            config_file: YAML配置文件名
+            
+        Returns:
+            True if created, False if already exists or error
+        """
+        # Prevent duplicate creation
+        if self.engine is not None:
+            return False
+            
+        try:
+            # Load YAML configuration
+            yaml_config = load_yaml_config(config_file)
+            
+            # Convert to legacy format for engine compatibility
+            self.config = config_manager.to_legacy_format(yaml_config)
+            
+            # Store YAML config reference for later use
+            self.yaml_config = yaml_config
+            
+            # Create simulation engine
+            self.engine = SimulationEngine(self.config)
+            return True
+            
+        except Exception as e:
+            print(f"Error creating simulation from YAML: {e}")
+            return False
+    
+    def create_simulation_from_yaml_data(self, yaml_config: SimulationConfigModel) -> bool:
+        """Create new simulation from YAML config model
+        
+        Args:
+            yaml_config: YAML配置模型实例
+            
+        Returns:
+            True if created, False if already exists or error
+        """
+        # Prevent duplicate creation
+        if self.engine is not None:
+            return False
+            
+        try:
+            # Convert to legacy format for engine compatibility
+            self.config = config_manager.to_legacy_format(yaml_config)
+            
+            # Store YAML config reference
+            self.yaml_config = yaml_config
+            
+            # Create simulation engine
+            self.engine = SimulationEngine(self.config)
+            return True
+            
+        except Exception as e:
+            print(f"Error creating simulation from YAML data: {e}")
+            return False
+    
+    def get_current_config(self) -> Dict:
+        """获取当前的配置信息"""
+        if hasattr(self, 'yaml_config') and self.yaml_config:
+            return {
+                "type": "yaml", 
+                "config": self.yaml_config.dict(),
+                "legacy_config": self.config
+            }
+        else:
+            return {
+                "type": "legacy",
+                "config": self.config
+            }
+    
+    def update_config_from_yaml(self, config_file: str) -> bool:
+        """从YAML文件更新配置（仅在仿真停止时）"""
+        if self.is_running:
+            return False
+            
+        try:
+            # Load new configuration
+            yaml_config = load_yaml_config(config_file)
+            self.config = config_manager.to_legacy_format(yaml_config)
+            self.yaml_config = yaml_config
+            
+            # If engine exists, recreate it with new config
+            if self.engine:
+                self.engine = None  # Clear old engine
+                self.engine = SimulationEngine(self.config)
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error updating config from YAML: {e}")
             return False
     
     def start_simulation(self) -> bool:

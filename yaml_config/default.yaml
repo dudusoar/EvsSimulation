@@ -1,0 +1,37 @@
+# EV仿真系统配置文件
+# 生成时间: 2025-07-01 19:20:14
+# 配置格式版本: 2.0
+
+simulation:
+  name: EV Simulation
+  location: West Lafayette, Indiana, USA
+  duration: 1800.0
+  time_step: 0.1
+vehicles:
+  count: 20
+  speed: 400.0
+  battery:
+    capacity: 100.0
+    charging_threshold: 40.0
+    consumption_rate: 1.2
+orders:
+  generation_rate: 1000
+  pricing:
+    base_price_per_km: 2.0
+    surge_multiplier: 1.5
+  max_waiting_time: 600.0
+charging_stations:
+  count: 5
+  slots_per_station: 3
+  charging_rate: 5.0
+  electricity_price: 0.8
+visualization:
+  mode: live                    # 运行模式: live=实时可视化, headless=无界面
+  enable_animation: true
+  animation_fps: 60
+  save_animation: true
+  animation_format: html
+data:
+  save_data: false
+  save_interval: 10.0
+  output_dir: simulation_output

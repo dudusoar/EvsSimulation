@@ -14,14 +14,14 @@ from fastapi.middleware.cors import CORSMiddleware
 # Add parent directories to path to import from existing simulation system
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from webapp.backend.api import simulation, data
+from webapp.backend.api import simulation, data, config
 from webapp.backend.websocket import simulation_ws
 
 # Create FastAPI app
 app = FastAPI(
     title="EV Simulation Web API",
     description="Real-time Electric Vehicle Simulation with Interactive Web Interface",
-    version="1.0.0"
+    version="2.0.0"  # 升级版本号以反映YAML配置支持
 )
 
 # Add CORS middleware for development
@@ -43,6 +43,7 @@ templates = Jinja2Templates(directory=str(frontend_path / "templates"))
 # Include API routers
 app.include_router(simulation.router, prefix="/api/simulation", tags=["simulation"])
 app.include_router(data.router, prefix="/api/data", tags=["data"])
+app.include_router(config.router, prefix="/api/config", tags=["configuration"])  # 新增配置管理API
 app.include_router(simulation_ws.router, prefix="/ws", tags=["websocket"])
 
 @app.get("/")
