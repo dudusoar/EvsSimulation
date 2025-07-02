@@ -1,10 +1,44 @@
 """
 Simulation Configuration Parameters Module
-Contains all simulation-related configuration parameters
+现在支持YAML配置驱动，同时保持向后兼容性
 """
 
-# ============= Basic Simulation Parameters =============
-SIMULATION_CONFIG = {
+from .yaml_config_manager import config_manager, SimulationConfigModel
+from typing import Dict, Any
+import os
+
+# ============= YAML配置系统 =============
+def get_config(config_file: str = "default.yaml") -> Dict[str, Any]:
+    """获取配置，优先使用YAML配置，fallback到传统配置
+    
+    Args:
+        config_file: YAML配置文件名
+        
+    Returns:
+        配置字典，格式兼容传统系统
+    """
+    try:
+        # 尝试加载YAML配置
+        yaml_config = config_manager.load_config(config_file)
+        return config_manager.to_legacy_format(yaml_config)
+    except Exception as e:
+        print(f"YAML配置加载失败，使用默认配置: {e}")
+        return DEFAULT_CONFIG
+
+def load_yaml_config(config_file: str = "default.yaml") -> SimulationConfigModel:
+    """直接加载YAML配置模型"""
+    return config_manager.load_config(config_file)
+
+def save_yaml_config(config: SimulationConfigModel, config_file: str = "default.yaml") -> bool:
+    """保存YAML配置"""
+    return config_manager.save_config(config, config_file)
+
+def convert_dict_to_yaml(config_dict: Dict) -> SimulationConfigModel:
+    """将字典配置转换为YAML配置"""
+    return config_manager.convert_legacy_config(config_dict)
+
+# ============= 默认配置 (向后兼容) =============
+DEFAULT_CONFIG = {
     # Map parameters
     'location': "West Lafayette, Indiana, USA",
     'cache_map': True,                # Whether to cache map data
@@ -41,13 +75,14 @@ SIMULATION_CONFIG = {
     'save_animation': True,           # Whether to save animation
     'animation_format': 'html',       # Animation format ('html' or 'mp4')
     
-
-    
     # Data management parameters
     'save_data': False,               # Whether to save simulation data
     'data_save_interval': 10,         # Data save interval (seconds)
     'output_dir': 'simulation_output' # Output directory
 }
+
+# 向后兼容：保持SIMULATION_CONFIG变量
+SIMULATION_CONFIG = get_config()
 
 # ============= Vehicle Status Definitions =============
 VEHICLE_STATUS = {

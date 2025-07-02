@@ -138,6 +138,81 @@ OrderSys → VehicleMgr → MapMgr → Engine → DataMgr
 2. **充电事件**: 电量检查 → 充电站查找 → 充电调度 → 充电完成
 3. **移动事件**: 路径规划 → 位置更新 → 到达检测 → 状态切换
 
+## 核心设计原则
+
+### 1. 前后端解耦设计 🔄
+**设计理念**: 确保前后端接口灵活，降低耦合度
+
+**实现策略**:
+- **固定API格式**: 使用Pydantic模型定义标准化数据传输格式
+- **JSON通信协议**: 前端只依赖JSON数据，不关心后端实现细节
+- **版本化接口**: API接口支持版本控制，确保向后兼容
+- **服务层封装**: 业务逻辑封装在服务层，API层只负责数据转换
+
+```python
+# 示例：标准化的API响应格式
+class APIResponse(BaseModel):
+    success: bool
+    message: str
+    data: Optional[Any] = None
+    error: Optional[str] = None
+
+class SimulationState(BaseModel):
+    vehicles: List[VehicleData]
+    charging_stations: List[ChargingStationData]
+    orders: List[OrderData]
+    stats: SimulationStats
+    timestamp: float
+```
+
+### 2. 后端优先架构 🎯
+**设计理念**: 核心业务逻辑在后端，前端适配后端
+
+**架构层次**:
+```
+核心仿真引擎 (core/) 
+    ↓ 业务逻辑层
+服务层包装 (webapp/backend/services/)
+    ↓ 抽象封装层
+API接口层 (webapp/backend/api/)
+    ↓ 数据传输层
+前端展示 (webapp/frontend/)
+    ↓ 用户界面层
+```
+
+**优势分析**:
+- **算法复杂度**: 仿真算法适合Python生态环境
+- **计算密集型**: 后端处理复杂的路径规划和车辆调度
+- **数据一致性**: 确保业务逻辑的统一性和正确性
+- **扩展性**: 前端可以多样化（Web、移动端、API）
+
+### 3. 配置驱动架构 ⚙️
+**设计理念**: 系统行为通过配置文件控制，支持动态调整
+
+**实现方向**:
+- **YAML配置**: 替代硬编码参数，支持层级化配置
+- **前后端统一**: 前端配置界面生成与后端相同的配置格式
+- **版本管理**: 配置文件支持版本控制和差异比较
+- **热更新**: 支持运行时配置变更（部分参数）
+
+```yaml
+# 理想的配置格式
+simulation:
+  location: "West Lafayette, Indiana, USA"
+  duration: 1800
+  time_step: 0.1
+
+vehicles:
+  count: 20
+  speed: 400  # km/h
+  battery_capacity: 100.0
+  charging_threshold: 40.0
+
+orders:
+  generation_rate: 1000  # orders/hour
+  base_price_per_km: 2.0
+```
+
 ## 设计模式应用
 
 ### 1. 管理器模式 (Manager Pattern)
@@ -157,6 +232,10 @@ OrderSys → VehicleMgr → MapMgr → Engine → DataMgr
 - 实时可视化系统监听仿真状态变化
 - WebSocket实时数据推送
 
+### 5. 适配器模式 (Adapter Pattern)
+- 服务层适配核心引擎与Web接口
+- API层适配内部数据格式与前端需求
+
 ## 扩展性设计
 
 ### 插件化架构
@@ -164,10 +243,30 @@ OrderSys → VehicleMgr → MapMgr → Engine → DataMgr
 - 新的定价策略可通过策略模式扩展
 - 新的可视化方式可通过接口扩展
 
-### 配置驱动
-- 所有参数通过配置文件管理
-- 支持运行时参数调整
-- 便于不同场景测试
+### 配置驱动架构
+- **YAML配置文件**: 替代硬编码参数，支持人类可读的配置格式
+- **前后端统一**: Web配置界面与Python后端使用相同的YAML格式
+- **多环境支持**: 支持开发、测试、生产等不同环境配置
+- **运行时调整**: 支持部分参数的热更新（无需重启系统）
+- **模板系统**: 内置常用配置模板，快速开始新仿真
+- **版本控制**: YAML格式便于Git追踪配置变更历史
+
+**配置示例**:
+```yaml
+simulation:
+  location: "West Lafayette, Indiana, USA"
+  duration: 1800
+vehicles:
+  count: 20
+  speed: 400
+  battery:
+    capacity: 100.0
+    charging_threshold: 40.0
+orders:
+  generation_rate: 1000
+  pricing:
+    base_price_per_km: 2.0
+```
 
 ## 性能优化
 

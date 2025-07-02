@@ -448,54 +448,314 @@ class EventManager:
                     print(f"Error in event listener: {e}")
 ```
 
-### 3. 配置驱动扩展
+### 3. YAML配置驱动架构
+
+#### 设计理念
+
+**YAML配置驱动**是我们讨论确定的核心架构原则之一，旨在：
+- 🎯 **统一配置格式**: 前后端使用相同的YAML配置文件
+- 🔧 **动态参数调整**: 支持运行时配置变更
+- 📝 **人类可读**: 非程序员也能理解和修改配置
+- 🌐 **多环境支持**: 不同场景使用不同配置文件
+
+#### 实现架构
 
 ```python
-import json
 import yaml
+import json
 from pathlib import Path
+from typing import Dict, Any, Optional, Callable, List
+from pydantic import BaseModel, ValidationError
 
-class ConfigManager:
-    """配置管理器"""
+class SimulationConfigModel(BaseModel):
+    """使用Pydantic验证YAML配置"""
+    class Simulation(BaseModel):
+        name: str = "EV Simulation"
+        location: str = "West Lafayette, Indiana, USA"
+        duration: float = 1800.0
+        time_step: float = 0.1
     
-    def __init__(self, config_path: str = None):
-        self.config_path = config_path
-        self.config = {}
-        self.watchers = []
+    class Vehicles(BaseModel):
+        count: int = 20
+        speed: float = 400.0  # km/h
+        battery_capacity: float = 100.0
+        charging_threshold: float = 40.0
+        consumption_rate: float = 1.2
+    
+    class Orders(BaseModel):
+        generation_rate: int = 1000
+        base_price_per_km: float = 2.0
+        surge_multiplier: float = 1.5
+        max_waiting_time: float = 600.0
+    
+    class ChargingStations(BaseModel):
+        count: int = 5
+        slots_per_station: int = 3
+        charging_rate: float = 5.0
+        electricity_price: float = 0.8
+    
+    class Visualization(BaseModel):
+        enable_animation: bool = True
+        animation_fps: int = 60
+        save_animation: bool = True
+        animation_format: str = "html"
+    
+    simulation: Simulation = Simulation()
+    vehicles: Vehicles = Vehicles()
+    orders: Orders = Orders()
+    charging_stations: ChargingStations = ChargingStations()
+    visualization: Visualization = Visualization()
+
+class YAMLConfigManager:
+    """YAML配置管理器"""
+    
+    def __init__(self, config_dir: str = "configs"):
+        self.config_dir = Path(config_dir)
+        self.config_dir.mkdir(exist_ok=True)
+        self.current_config: Optional[SimulationConfigModel] = None
+        self.watchers: List[Callable] = []
+        self.templates: Dict[str, SimulationConfigModel] = {}
         
-    def load_config(self, config_path: str = None):
+        # 加载预定义模板
+        self._load_templates()
+    
+    def create_config(self, name: str, config_dict: Dict[str, Any]) -> bool:
+        """创建新的配置文件"""
+        try:
+            # 验证配置数据
+            config_model = SimulationConfigModel(**config_dict)
+            
+            # 保存为YAML文件
+            config_path = self.config_dir / f"{name}.yaml"
+            with open(config_path, 'w', encoding='utf-8') as f:
+                # 转换为字典再保存，保持YAML格式美观
+                config_dict = config_model.dict()
+                yaml.dump(config_dict, f, default_flow_style=False, allow_unicode=True)
+            
+            return True
+            
+        except ValidationError as e:
+            print(f"配置验证失败: {e}")
+            return False
+        except Exception as e:
+            print(f"保存配置失败: {e}")
+            return False
+    
+    def load_config(self, name: str) -> Optional[SimulationConfigModel]:
         """加载配置文件"""
-        path = config_path or self.config_path
-        if not path:
-            return
+        config_path = self.config_dir / f"{name}.yaml"
         
-        config_file = Path(path)
+        if not config_path.exists():
+            print(f"配置文件不存在: {config_path}")
+            return None
         
-        if config_file.suffix.lower() == '.json':
-            with open(config_file, 'r', encoding='utf-8') as f:
-                self.config = json.load(f)
-        elif config_file.suffix.lower() in ['.yml', '.yaml']:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                self.config = yaml.safe_load(f)
-        
-        self._notify_watchers()
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config_data = yaml.safe_load(f)
+            
+            config_model = SimulationConfigModel(**config_data)
+            self.current_config = config_model
+            self._notify_watchers()
+            
+            return config_model
+            
+        except ValidationError as e:
+            print(f"配置验证失败: {e}")
+            return None
+        except Exception as e:
+            print(f"加载配置失败: {e}")
+            return None
     
-    def get(self, key: str, default=None):
-        """获取配置值"""
-        keys = key.split('.')
-        value = self.config
+    def get_config_value(self, key_path: str, default=None):
+        """获取配置值 (支持点号路径)"""
+        if not self.current_config:
+            return default
         
-        for k in keys:
-            if isinstance(value, dict) and k in value:
-                value = value[k]
+        keys = key_path.split('.')
+        value = self.current_config.dict()
+        
+        for key in keys:
+            if isinstance(value, dict) and key in value:
+                value = value[key]
             else:
                 return default
         
         return value
     
-    def watch(self, callback: Callable):
+    def list_configs(self) -> List[str]:
+        """列出所有可用配置"""
+        configs = []
+        for config_file in self.config_dir.glob("*.yaml"):
+            configs.append(config_file.stem)
+        return configs
+    
+    def delete_config(self, name: str) -> bool:
+        """删除配置文件"""
+        config_path = self.config_dir / f"{name}.yaml"
+        try:
+            if config_path.exists():
+                config_path.unlink()
+                return True
+            return False
+        except Exception as e:
+            print(f"删除配置失败: {e}")
+            return False
+    
+    def export_to_legacy_format(self) -> Dict[str, Any]:
+        """转换为旧版配置格式（兼容现有系统）"""
+        if not self.current_config:
+            return {}
+        
+        config = self.current_config
+        
+        # 转换为现有系统期望的格式
+        legacy_config = {
+            # 基础参数
+            'location': config.simulation.location,
+            'simulation_duration': config.simulation.duration,
+            'time_step': config.simulation.time_step,
+            
+            # 车辆参数
+            'num_vehicles': config.vehicles.count,
+            'vehicle_speed': config.vehicles.speed,
+            'battery_capacity': config.vehicles.battery_capacity,
+            'charging_threshold': config.vehicles.charging_threshold,
+            'energy_consumption': config.vehicles.consumption_rate,
+            
+            # 订单参数
+            'order_generation_rate': config.orders.generation_rate,
+            'base_price_per_km': config.orders.base_price_per_km,
+            'surge_multiplier': config.orders.surge_multiplier,
+            'max_waiting_time': config.orders.max_waiting_time,
+            
+            # 充电站参数
+            'num_charging_stations': config.charging_stations.count,
+            'charging_slots_per_station': config.charging_stations.slots_per_station,
+            'charging_rate': config.charging_stations.charging_rate,
+            'electricity_price': config.charging_stations.electricity_price,
+            
+            # 可视化参数
+            'enable_animation': config.visualization.enable_animation,
+            'animation_fps': config.visualization.animation_fps,
+            'save_animation': config.visualization.save_animation,
+            'animation_format': config.visualization.animation_format,
+        }
+        
+        return legacy_config
+    
+    def _load_templates(self):
+        """加载预定义配置模板"""
+        # 默认配置
+        default_config = SimulationConfigModel()
+        self.templates["default"] = default_config
+        
+        # 快速测试配置
+        quick_test_data = {
+            "simulation": {"name": "Quick Test", "duration": 300},
+            "vehicles": {"count": 5},
+            "orders": {"generation_rate": 200},
+            "charging_stations": {"count": 2}
+        }
+        self.templates["quick_test"] = SimulationConfigModel(**quick_test_data)
+        
+        # 大规模测试配置
+        large_scale_data = {
+            "simulation": {"name": "Large Scale", "duration": 3600},
+            "vehicles": {"count": 100},
+            "orders": {"generation_rate": 5000},
+            "charging_stations": {"count": 20}
+        }
+        self.templates["large_scale"] = SimulationConfigModel(**large_scale_data)
+    
+    def get_template(self, name: str) -> Optional[SimulationConfigModel]:
+        """获取配置模板"""
+        return self.templates.get(name)
+    
+    def list_templates(self) -> List[str]:
+        """列出所有可用模板"""
+        return list(self.templates.keys())
+    
+    def watch_config_changes(self, callback: Callable):
         """监听配置变化"""
         self.watchers.append(callback)
+    
+    def _notify_watchers(self):
+        """通知配置变化观察者"""
+        for callback in self.watchers:
+            try:
+                callback(self.current_config)
+            except Exception as e:
+                print(f"通知配置观察者失败: {e}")
+
+# 全局配置管理实例
+config_manager = YAMLConfigManager()
+```
+
+#### Web API集成
+
+```python
+# webapp/backend/api/config.py
+from fastapi import APIRouter, HTTPException
+from typing import List
+from .yaml_config_manager import config_manager, SimulationConfigModel
+
+router = APIRouter()
+
+@router.post("/config/create")
+async def create_config(name: str, config_data: dict):
+    """创建新配置"""
+    success = config_manager.create_config(name, config_data)
+    if success:
+        return {"success": True, "message": f"配置 {name} 创建成功"}
+    else:
+        raise HTTPException(status_code=400, detail="配置创建失败")
+
+@router.get("/config/list")
+async def list_configs():
+    """获取配置列表"""
+    configs = config_manager.list_configs()
+    templates = config_manager.list_templates()
+    return {
+        "configs": configs,
+        "templates": templates
+    }
+
+@router.get("/config/{name}")
+async def get_config(name: str):
+    """获取指定配置"""
+    config = config_manager.load_config(name)
+    if config:
+        return config.dict()
+    else:
+        raise HTTPException(status_code=404, detail="配置不存在")
+
+@router.get("/config/template/{name}")
+async def get_template(name: str):
+    """获取配置模板"""
+    template = config_manager.get_template(name)
+    if template:
+        return template.dict()
+    else:
+        raise HTTPException(status_code=404, detail="模板不存在")
+
+@router.delete("/config/{name}")
+async def delete_config(name: str):
+    """删除配置"""
+    success = config_manager.delete_config(name)
+    if success:
+        return {"success": True, "message": f"配置 {name} 删除成功"}
+    else:
+        raise HTTPException(status_code=404, detail="配置不存在")
+```
+
+#### 实现优势
+
+- ✅ **类型安全**: Pydantic模型确保配置数据类型正确
+- ✅ **格式验证**: 自动验证YAML格式和数据完整性
+- ✅ **版本兼容**: 支持向现有系统的无缝迁移
+- ✅ **模板系统**: 内置常用配置模板，快速开始
+- ✅ **实时监控**: 配置变更的观察者模式通知
+- ✅ **多环境**: 支持开发、测试、生产等多套配置
 ```
 
 ## 测试与验证

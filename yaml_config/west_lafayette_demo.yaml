@@ -1,0 +1,43 @@
+# EV仿真系统配置文件
+# 生成时间: 2024-12-20 
+# 配置格式版本: 2.0
+# 配置名称: West Lafayette 演示配置
+
+simulation:
+  name: "West Lafayette 高强度演示"
+  location: "West Lafayette, Indiana, USA"  # 使用统一的测试城市
+  duration: 1800.0                          # 30分钟仿真
+  time_step: 0.1                           # 高精度时间步长
+
+vehicles:
+  count: 20                                # 20辆电动车
+  speed: 400.0                            # 超高速度 (km/h) - 适合演示
+  battery:
+    capacity: 100.0                       # 电池容量 (%)
+    charging_threshold: 40.0               # 充电阈值 (%)
+    consumption_rate: 1.2                  # 能耗率 (%/km)
+
+orders:
+  generation_rate: 1000                    # 高频订单生成 (订单/小时)
+  pricing:
+    base_price_per_km: 2.0                # 基础价格 (USD/km)
+    surge_multiplier: 1.5                 # 高峰倍数
+  max_waiting_time: 600.0                 # 最大等待时间 (秒)
+
+charging_stations:
+  count: 5                                # 充电站数量
+  slots_per_station: 3                    # 每站充电桩数
+  charging_rate: 5.0                      # 超快充电 (%/秒)
+  electricity_price: 0.8                  # 电价 (USD/kWh)
+
+visualization:
+  mode: live                              # 实时可视化模式
+  enable_animation: true                   # 启用动画
+  animation_fps: 60                       # 高帧率
+  save_animation: true                    # 保存动画
+  animation_format: "html"                # HTML格式
+
+data:
+  save_data: false                        # 演示模式不保存
+  save_interval: 10.0                     # 保存间隔
+  output_dir: "simulation_output"         # 输出目录 
