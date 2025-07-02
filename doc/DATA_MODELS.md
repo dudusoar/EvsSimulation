@@ -302,4 +302,431 @@ SIMULATION_CONFIG = {
 ### 数据字段映射
 - 所有时间戳都以秒为单位
 - 所有距离都以米为单位存储，显示时转换为公里
-- 所有价格都以配置的货币单位存储 
+- 所有价格都以配置的货币单位存储
+
+---
+
+## 🌐 Web应用数据模型
+
+### API响应格式
+
+#### 通用响应结构
+```python
+@dataclass
+class APIResponse:
+    success: bool                      # 请求是否成功
+    message: str                       # 响应消息
+    data: Optional[Dict] = None        # 响应数据
+    error: Optional[str] = None        # 错误信息
+    timestamp: float = None            # 响应时间戳
+```
+
+#### 仿真状态响应
+```python
+@dataclass
+class SimulationStatus:
+    simulation_id: str                 # 仿真实例ID
+    status: str                        # 运行状态
+    current_time: float                # 当前仿真时间
+    total_duration: float              # 总仿真时长
+    progress: float                    # 进度百分比
+    statistics: Dict                   # 实时统计数据
+    
+    # 统计数据结构
+    statistics = {
+        'vehicles': {
+            'total_count': int,
+            'idle_count': int,
+            'to_pickup_count': int,
+            'with_passenger_count': int,
+            'charging_count': int,
+            'average_battery': float
+        },
+        'orders': {
+            'total_orders': int,
+            'completed_orders': int,
+            'active_orders': int,
+            'pending_orders': int,
+            'average_wait_time': float
+        },
+        'revenue': {
+            'total_revenue': float,
+            'average_order_value': float,
+            'revenue_per_hour': float
+        },
+        'charging': {
+            'total_sessions': int,
+            'active_sessions': int,
+            'total_energy': float,
+            'average_utilization': float
+        }
+    }
+```
+
+#### 车辆数据响应
+```python
+@dataclass
+class VehicleResponse:
+    vehicles: List[VehicleData]        # 车辆列表
+    total_count: int                   # 总车辆数
+    status_counts: Dict[str, int]      # 状态分布统计
+    
+@dataclass
+class VehicleData:
+    id: str                            # 车辆ID
+    status: str                        # 当前状态
+    position: Dict[str, float]         # 位置 {'lat': float, 'lon': float}
+    battery_percentage: float          # 电量百分比
+    current_order: Optional[str]       # 当前订单ID
+    route: List[Dict[str, float]]      # 路径点列表
+    statistics: Dict                   # 车辆统计数据
+    
+    # 车辆统计数据结构
+    statistics = {
+        'total_distance': float,       # 总行驶距离
+        'total_orders': int,           # 完成订单数
+        'total_revenue': float,        # 总收入
+        'total_charging_cost': float,  # 总充电成本
+        'utilization_rate': float,     # 利用率
+        'idle_time': float             # 空闲时间
+    }
+```
+
+#### 订单数据响应
+```python
+@dataclass
+class OrderResponse:
+    orders: List[OrderData]            # 订单列表
+    total_count: int                   # 总订单数
+    status_counts: Dict[str, int]      # 状态分布统计
+    
+@dataclass
+class OrderData:
+    id: str                            # 订单ID
+    status: str                        # 订单状态
+    pickup_location: Dict[str, float]  # 接客点 {'lat': float, 'lon': float}
+    dropoff_location: Dict[str, float] # 目的地 {'lat': float, 'lon': float}
+    creation_time: float               # 创建时间
+    waiting_time: Optional[float]      # 等待时间
+    estimated_price: float             # 预估价格
+    final_price: Optional[float]       # 最终价格
+    assigned_vehicle: Optional[str]    # 分配的车辆ID
+    pickup_eta: Optional[float]        # 预估接客时间
+```
+
+#### 充电站数据响应
+```python
+@dataclass
+class ChargingStationResponse:
+    charging_stations: List[ChargingStationData]  # 充电站列表
+    system_stats: Dict                            # 系统统计
+    
+@dataclass
+class ChargingStationData:
+    id: str                            # 充电站ID
+    location: Dict[str, float]         # 位置 {'lat': float, 'lon': float}
+    total_slots: int                   # 总充电位数
+    available_slots: int               # 可用充电位数
+    charging_vehicles: List[Dict]      # 正在充电的车辆
+    utilization_rate: float            # 使用率
+    total_energy_dispensed: float      # 总供电量
+    total_revenue: float               # 总收入
+    
+    # 正在充电的车辆数据结构
+    charging_vehicles = [{
+        'vehicle_id': str,             # 车辆ID
+        'start_time': float,           # 开始充电时间
+        'progress': float,             # 充电进度 (%)
+        'estimated_completion': float   # 预估完成时间
+    }]
+    
+    # 系统统计数据结构
+    system_stats = {
+        'total_stations': int,         # 总充电站数
+        'total_slots': int,            # 总充电位数
+        'occupied_slots': int,         # 占用充电位数
+        'system_utilization': float,   # 系统利用率
+        'queue_length': int            # 排队车辆数
+    }
+```
+
+### WebSocket消息格式
+
+#### 基础消息结构
+```python
+@dataclass
+class WebSocketMessage:
+    type: str                          # 消息类型
+    timestamp: float                   # 时间戳
+    data: Dict                         # 消息数据
+    simulation_id: Optional[str] = None # 仿真实例ID
+```
+
+#### 仿真状态更新消息
+```json
+{
+    "type": "simulation_update",
+    "timestamp": 1699123456.789,
+    "simulation_id": "sim_123456789",
+    "data": {
+        "current_time": 1250.5,
+        "status": "running",
+        "progress": 34.7,
+        "statistics": {
+            "total_revenue": 2847.50,
+            "active_orders": 15,
+            "completed_orders": 398,
+            "vehicle_utilization": 78.5
+        }
+    }
+}
+```
+
+#### 车辆位置更新消息
+```json
+{
+    "type": "vehicle_update",
+    "timestamp": 1699123456.789,
+    "simulation_id": "sim_123456789",
+    "data": {
+        "vehicles": [
+            {
+                "id": "vehicle_001",
+                "position": {"lat": 40.4267, "lon": -86.9137},
+                "status": "with_passenger",
+                "battery_percentage": 85.5,
+                "route": [
+                    {"lat": 40.4267, "lon": -86.9137},
+                    {"lat": 40.4289, "lon": -86.9140}
+                ]
+            }
+        ]
+    }
+}
+```
+
+#### 订单状态更新消息
+```json
+{
+    "type": "order_update",
+    "timestamp": 1699123456.789,
+    "simulation_id": "sim_123456789",
+    "data": {
+        "orders": [
+            {
+                "id": "order_123",
+                "status": "assigned",
+                "assigned_vehicle": "vehicle_003",
+                "pickup_eta": 2.5,
+                "pickup_location": {"lat": 40.4250, "lon": -86.9120},
+                "dropoff_location": {"lat": 40.4300, "lon": -86.9200}
+            }
+        ]
+    }
+}
+```
+
+#### 充电站状态更新消息
+```json
+{
+    "type": "charging_update",
+    "timestamp": 1699123456.789,
+    "simulation_id": "sim_123456789",
+    "data": {
+        "stations": [
+            {
+                "id": "station_001",
+                "available_slots": 2,
+                "total_slots": 4,
+                "charging_vehicles": [
+                    {
+                        "vehicle_id": "vehicle_005",
+                        "progress": 65.5,
+                        "estimated_completion": 180.0
+                    }
+                ],
+                "utilization_rate": 50.0
+            }
+        ]
+    }
+}
+```
+
+#### 系统告警消息
+```json
+{
+    "type": "alert",
+    "timestamp": 1699123456.789,
+    "simulation_id": "sim_123456789",
+    "data": {
+        "alert_id": "alert_001",
+        "level": "warning",  // "info", "warning", "error", "critical"
+        "category": "vehicle", // "vehicle", "order", "charging", "system"
+        "message": "Vehicle vehicle_007 battery level below 15%",
+        "details": {
+            "vehicle_id": "vehicle_007",
+            "battery_percentage": 12.3,
+            "current_location": {"lat": 40.4234, "lon": -86.9145},
+            "nearest_charging_station": "station_003",
+            "distance_to_station": 2.1
+        },
+        "suggested_action": "Redirect to nearest charging station",
+        "auto_resolve": false
+    }
+}
+```
+
+#### 客户端控制消息
+```json
+{
+    "type": "control_command",
+    "timestamp": 1699123456.789,
+    "simulation_id": "sim_123456789",
+    "data": {
+        "command": "pause",  // "start", "pause", "resume", "stop", "restart"
+        "parameters": {},
+        "client_id": "client_001"
+    }
+}
+```
+
+### 配置数据模型
+
+#### Web配置参数
+```python
+@dataclass
+class WebConfig:
+    # 服务器配置
+    host: str = "127.0.0.1"
+    port: int = 8080
+    debug: bool = True
+    reload: bool = True
+    
+    # WebSocket配置
+    websocket_max_connections: int = 100
+    websocket_ping_interval: int = 30
+    websocket_ping_timeout: int = 10
+    
+    # 数据更新配置
+    update_interval: float = 0.1       # 数据更新间隔 (秒)
+    batch_size: int = 50               # 批量更新大小
+    max_history_records: int = 1000    # 最大历史记录数
+    
+    # 地图配置
+    default_zoom: int = 13             # 默认地图缩放级别
+    map_update_interval: float = 0.2   # 地图更新间隔 (秒)
+    
+    # 图表配置
+    chart_data_points: int = 100       # 图表数据点数量
+    chart_update_interval: float = 1.0 # 图表更新间隔 (秒)
+```
+
+### 错误处理模型
+
+#### 错误响应格式
+```python
+@dataclass
+class ErrorResponse:
+    success: bool = False
+    error: ErrorDetail
+    
+@dataclass
+class ErrorDetail:
+    code: str                          # 错误代码
+    message: str                       # 错误消息
+    details: Optional[Dict] = None     # 错误详情
+    timestamp: float                   # 错误时间戳
+    request_id: Optional[str] = None   # 请求ID
+```
+
+#### 常见错误代码
+```python
+ERROR_CODES = {
+    'SIMULATION_NOT_FOUND': 'SIM001',
+    'INVALID_PARAMETER': 'VAL001',
+    'RESOURCE_BUSY': 'RES001', 
+    'INSUFFICIENT_BATTERY': 'VEH001',
+    'CHARGING_STATION_FULL': 'CHG001',
+    'ORDER_NOT_ASSIGNABLE': 'ORD001',
+    'MAP_LOAD_FAILED': 'MAP001',
+    'WEBSOCKET_ERROR': 'WS001',
+    'DATABASE_ERROR': 'DB001',
+    'INTERNAL_ERROR': 'SYS001'
+}
+```
+
+### 数据验证模型
+
+#### Pydantic验证模型
+```python
+from pydantic import BaseModel, Field, validator
+
+class SimulationConfigModel(BaseModel):
+    location: str = Field(..., min_length=1, max_length=200)
+    num_vehicles: int = Field(..., ge=1, le=1000)
+    duration: float = Field(..., gt=0, le=86400)  # 最大24小时
+    vehicle_speed: float = Field(..., gt=0, le=500)
+    battery_capacity: float = Field(..., gt=0, le=1000)
+    
+    @validator('location')
+    def location_must_be_valid(cls, v):
+        if not v.strip():
+            raise ValueError('Location cannot be empty')
+        return v.strip()
+    
+    @validator('num_vehicles')
+    def vehicles_must_be_reasonable(cls, v):
+        if v > 100:
+            warnings.warn(f'Large number of vehicles ({v}) may impact performance')
+        return v
+
+class VehicleCreateModel(BaseModel):
+    position: Tuple[float, float]
+    battery_percentage: float = Field(default=100.0, ge=0, le=100)
+    
+class OrderCreateModel(BaseModel):
+    pickup_location: Tuple[float, float]
+    dropoff_location: Tuple[float, float]
+    priority: int = Field(default=1, ge=1, le=5)
+```
+
+---
+
+## 📊 数据关系扩展图
+
+```
+Web Application Layer
+┌─────────────────────────────────────────────────────────────┐
+│                    FastAPI Backend                         │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
+│  │   REST API  │    │ WebSocket   │    │  Static     │      │
+│  │             │    │ Handler     │    │ Files       │      │
+│  │ /api/...    │    │ /ws/{id}    │    │ /static/... │      │
+│  └─────────────┘    └─────────────┘    └─────────────┘      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+Core Simulation Engine
+┌─────────────────────────────────────────────────────────────┐
+│  ┌─────────────┐     1:N     ┌─────────────┐                │
+│  │   Vehicle   │ ←───────── │    Order    │                │
+│  │             │            │             │                │
+│  │ vehicle_id  │            │assigned_    │                │
+│  │ status      │            │vehicle_id   │                │
+│  │ position    │            │ status      │                │
+│  └─────────────┘            └─────────────┘                │
+│         │                          │                       │
+│         │ M:N                      │ 1:1                   │
+│         │                          │                       │
+│  ┌─────────────┐            ┌─────────────┐                │
+│  │ChargingSttn │            │  MapNode    │                │
+│  │             │            │             │                │
+│  │ station_id  │            │  node_id    │                │
+│  │ node_id     │            │  position   │                │
+│  │ capacity    │            │             │                │
+│  └─────────────┘            └─────────────┘                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+这套完整的数据模型文档为双仿真系统提供了统一的数据格式标准，确保Python引擎和Web应用之间的数据一致性和互操作性。 

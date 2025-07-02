@@ -73,6 +73,373 @@ python main.py -c custom_config.json --save-data --report
 
 ---
 
+## 🌐 Web API 接口
+
+### 基础信息
+
+**基础URL**: `http://127.0.0.1:8080`  
+**API版本**: v1  
+**认证**: 暂不需要（开发版）  
+**数据格式**: JSON  
+
+### 仿真控制 API
+
+#### 创建仿真实例
+
+```http
+POST /api/simulation/create
+Content-Type: application/json
+
+{
+    "location": "West Lafayette, Indiana, USA",
+    "num_vehicles": 20,
+    "duration": 3600,
+    "charging_stations": 5,
+    "vehicle_speed": 50,
+    "battery_capacity": 100.0
+}
+```
+
+**响应**:
+```json
+{
+    "success": true,
+    "simulation_id": "sim_123456789",
+    "status": "created",
+    "message": "Simulation created successfully"
+}
+```
+
+#### 启动仿真
+
+```http
+POST /api/simulation/{simulation_id}/start
+```
+
+**响应**:
+```json
+{
+    "success": true,
+    "status": "started",
+    "message": "Simulation started successfully"
+}
+```
+
+#### 控制仿真
+
+```http
+POST /api/simulation/{simulation_id}/control
+Content-Type: application/json
+
+{
+    "action": "pause"  # 可选: "pause", "resume", "stop", "restart"
+}
+```
+
+**响应**:
+```json
+{
+    "success": true,
+    "status": "paused",
+    "message": "Simulation paused"
+}
+```
+
+#### 获取仿真状态
+
+```http
+GET /api/simulation/{simulation_id}/status
+```
+
+**响应**:
+```json
+{
+    "simulation_id": "sim_123456789",
+    "status": "running",
+    "current_time": 1250.5,
+    "total_duration": 3600,
+    "progress": 34.7,
+    "statistics": {
+        "total_orders": 425,
+        "completed_orders": 398,
+        "active_orders": 15,
+        "total_revenue": 2847.50,
+        "average_wait_time": 3.2
+    }
+}
+```
+
+### 数据查询 API
+
+#### 获取车辆信息
+
+```http
+GET /api/data/vehicles?simulation_id={simulation_id}
+```
+
+**响应**:
+```json
+{
+    "vehicles": [
+        {
+            "id": "vehicle_001",
+            "status": "with_passenger",
+            "position": {
+                "lat": 40.4267,
+                "lon": -86.9137
+            },
+            "battery_percentage": 85.5,
+            "current_order": "order_789",
+            "route": [
+                {"lat": 40.4267, "lon": -86.9137},
+                {"lat": 40.4289, "lon": -86.9140}
+            ]
+        }
+    ],
+    "total_count": 20,
+    "status_counts": {
+        "idle": 8,
+        "to_pickup": 5,
+        "with_passenger": 4,
+        "charging": 3
+    }
+}
+```
+
+#### 获取订单信息
+
+```http
+GET /api/data/orders?simulation_id={simulation_id}&status=pending
+```
+
+**响应**:
+```json
+{
+    "orders": [
+        {
+            "id": "order_123",
+            "status": "pending",
+            "pickup_location": {
+                "lat": 40.4250,
+                "lon": -86.9120
+            },
+            "dropoff_location": {
+                "lat": 40.4300,
+                "lon": -86.9200
+            },
+            "creation_time": 1248.3,
+            "waiting_time": 2.2,
+            "estimated_price": 15.50,
+            "assigned_vehicle": null
+        }
+    ],
+    "total_count": 15,
+    "status_counts": {
+        "pending": 15,
+        "assigned": 8,
+        "in_progress": 4,
+        "completed": 398
+    }
+}
+```
+
+#### 获取充电站信息
+
+```http
+GET /api/data/charging-stations?simulation_id={simulation_id}
+```
+
+**响应**:
+```json
+{
+    "charging_stations": [
+        {
+            "id": "station_001",
+            "location": {
+                "lat": 40.4280,
+                "lon": -86.9150
+            },
+            "total_slots": 4,
+            "available_slots": 2,
+            "charging_vehicles": [
+                {
+                    "vehicle_id": "vehicle_005",
+                    "start_time": 1200.0,
+                    "progress": 65.5
+                }
+            ],
+            "utilization_rate": 50.0,
+            "total_energy_dispensed": 125.8
+        }
+    ],
+    "system_stats": {
+        "total_stations": 5,
+        "total_slots": 20,
+        "occupied_slots": 8,
+        "system_utilization": 40.0
+    }
+}
+```
+
+### 配置管理 API
+
+#### 获取当前配置
+
+```http
+GET /api/config/current?simulation_id={simulation_id}
+```
+
+**响应**:
+```json
+{
+    "simulation_id": "sim_123456789",
+    "config": {
+        "location": "West Lafayette, Indiana, USA",
+        "num_vehicles": 20,
+        "duration": 3600,
+        "vehicle_speed": 50,
+        "battery_capacity": 100.0,
+        "charging_threshold": 20.0,
+        "order_generation_rate": 1000,
+        "base_price_per_km": 2.0,
+        "num_charging_stations": 5,
+        "charging_rate": 5.0
+    }
+}
+```
+
+#### 更新配置参数
+
+```http
+PUT /api/config/update
+Content-Type: application/json
+
+{
+    "simulation_id": "sim_123456789",
+    "parameters": {
+        "order_generation_rate": 1200,
+        "base_price_per_km": 2.5
+    }
+}
+```
+
+### WebSocket 实时通信
+
+#### 连接WebSocket
+
+```javascript
+const ws = new WebSocket('ws://127.0.0.1:8080/ws/{simulation_id}');
+
+ws.onopen = function(event) {
+    console.log('WebSocket连接已建立');
+};
+
+ws.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    handleRealtimeUpdate(data);
+};
+```
+
+#### WebSocket消息格式
+
+**仿真状态更新**:
+```json
+{
+    "type": "simulation_update",
+    "timestamp": 1699123456.789,
+    "data": {
+        "current_time": 1250.5,
+        "statistics": {
+            "total_revenue": 2847.50,
+            "active_orders": 15,
+            "completed_orders": 398
+        }
+    }
+}
+```
+
+**车辆位置更新**:
+```json
+{
+    "type": "vehicle_update",
+    "timestamp": 1699123456.789,
+    "data": {
+        "vehicles": [
+            {
+                "id": "vehicle_001",
+                "position": {"lat": 40.4267, "lon": -86.9137},
+                "status": "with_passenger",
+                "battery_percentage": 85.5
+            }
+        ]
+    }
+}
+```
+
+**订单状态更新**:
+```json
+{
+    "type": "order_update",
+    "timestamp": 1699123456.789,
+    "data": {
+        "orders": [
+            {
+                "id": "order_123",
+                "status": "assigned",
+                "assigned_vehicle": "vehicle_003",
+                "pickup_eta": 2.5
+            }
+        ]
+    }
+}
+```
+
+#### 客户端发送消息
+
+**请求数据更新**:
+```json
+{
+    "type": "request_update",
+    "data": {
+        "components": ["vehicles", "orders", "statistics"]
+    }
+}
+```
+
+**控制仿真**:
+```json
+{
+    "type": "control",
+    "data": {
+        "action": "pause"
+    }
+}
+```
+
+### 静态资源 API
+
+#### 页面路由
+
+| 路径 | 描述 | 模板文件 |
+|------|------|----------|
+| `/` | 主控制台 | `index.html` |
+| `/vehicles` | 车辆跟踪页面 | `vehicles.html` |
+| `/orders` | 订单管理页面 | `orders.html` |
+| `/charging-stations` | 充电站监控页面 | `charging-stations.html` |
+| `/config` | 配置面板 | `config.html` |
+
+#### 静态文件
+
+| 路径 | 类型 | 描述 |
+|------|------|------|
+| `/static/css/style.css` | CSS | 主样式表 |
+| `/static/js/app.js` | JavaScript | 主应用逻辑 |
+| `/static/js/websocket.js` | JavaScript | WebSocket客户端 |
+| `/static/js/map.js` | JavaScript | 地图控制 |
+| `/static/js/charts.js` | JavaScript | 图表组件 |
+
+---
+
 ## 内部编程接口
 
 

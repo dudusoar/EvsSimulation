@@ -975,4 +975,451 @@ jobs:
       uses: codecov/codecov-action@v2
 ```
 
-这套技术实现框架为电动车仿真系统提供了坚实的技术基础，确保系统的高性能、可扩展性和可维护性。 
+## 🌐 Web应用系统技术实现
+
+### FastAPI后端架构
+
+#### 1. RESTful API设计
+
+```python
+# webapp/backend/api/simulation.py
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from ..services.simulation_service import SimulationService
+
+router = APIRouter()
+service = SimulationService()
+
+@router.post("/simulation/create")
+async def create_simulation(config: dict):
+    """创建新仿真实例"""
+    try:
+        sim_id = service.create_simulation(config)
+        return {"simulation_id": sim_id, "status": "created"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/simulation/{sim_id}/start")
+async def start_simulation(sim_id: str, background_tasks: BackgroundTasks):
+    """启动仿真"""
+    background_tasks.add_task(service.run_simulation, sim_id)
+    return {"status": "started"}
+
+@router.get("/simulation/{sim_id}/status")
+async def get_simulation_status(sim_id: str):
+    """获取仿真状态"""
+    status = service.get_simulation_status(sim_id)
+    return status
+```
+
+#### 2. WebSocket实时通信
+
+```python
+# webapp/backend/websocket/simulation_ws.py
+from fastapi import WebSocket, WebSocketDisconnect
+import json
+import asyncio
+
+class ConnectionManager:
+    """WebSocket连接管理"""
+    
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+        self.simulation_subscribers: Dict[str, List[WebSocket]] = {}
+    
+    async def connect(self, websocket: WebSocket, sim_id: str):
+        """建立WebSocket连接"""
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        
+        if sim_id not in self.simulation_subscribers:
+            self.simulation_subscribers[sim_id] = []
+        self.simulation_subscribers[sim_id].append(websocket)
+    
+    async def broadcast_simulation_update(self, sim_id: str, data: dict):
+        """广播仿真更新"""
+        if sim_id in self.simulation_subscribers:
+            message = json.dumps(data)
+            disconnected = []
+            
+            for websocket in self.simulation_subscribers[sim_id]:
+                try:
+                    await websocket.send_text(message)
+                except:
+                    disconnected.append(websocket)
+            
+            # 清理断开的连接
+            for ws in disconnected:
+                self.simulation_subscribers[sim_id].remove(ws)
+                if ws in self.active_connections:
+                    self.active_connections.remove(ws)
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/{sim_id}")
+async def websocket_endpoint(websocket: WebSocket, sim_id: str):
+    """WebSocket端点"""
+    await manager.connect(websocket, sim_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # 处理来自客户端的消息
+            await handle_client_message(sim_id, json.loads(data))
+    except WebSocketDisconnect:
+        pass
+```
+
+#### 3. 异步仿真执行
+
+```python
+# webapp/backend/services/simulation_service.py
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from ...core.simulation_engine import SimulationEngine
+
+class SimulationService:
+    """仿真服务层"""
+    
+    def __init__(self):
+        self.simulations: Dict[str, SimulationEngine] = {}
+        self.simulation_tasks: Dict[str, asyncio.Task] = {}
+        self.executor = ThreadPoolExecutor(max_workers=4)
+    
+    def create_simulation(self, config: dict) -> str:
+        """创建仿真实例"""
+        sim_id = str(uuid.uuid4())
+        engine = SimulationEngine(config)
+        self.simulations[sim_id] = engine
+        return sim_id
+    
+    async def run_simulation(self, sim_id: str):
+        """异步运行仿真"""
+        if sim_id not in self.simulations:
+            raise ValueError(f"Simulation {sim_id} not found")
+        
+        engine = self.simulations[sim_id]
+        
+        async def simulation_loop():
+            while engine.is_running:
+                # 在线程池中执行仿真步骤
+                await asyncio.get_event_loop().run_in_executor(
+                    self.executor, engine.run_step
+                )
+                
+                # 广播状态更新
+                status = engine.get_current_statistics()
+                await manager.broadcast_simulation_update(sim_id, status)
+                
+                # 控制更新频率
+                await asyncio.sleep(0.1)
+        
+        task = asyncio.create_task(simulation_loop())
+        self.simulation_tasks[sim_id] = task
+```
+
+### 前端JavaScript架构
+
+#### 1. 模块化JavaScript设计
+
+```javascript
+// webapp/frontend/static/js/websocket.js
+class WebSocketManager {
+    constructor(simulationId) {
+        this.simulationId = simulationId;
+        this.ws = null;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
+        this.callbacks = new Map();
+    }
+    
+    connect() {
+        const wsUrl = `ws://${window.location.host}/ws/${this.simulationId}`;
+        this.ws = new WebSocket(wsUrl);
+        
+        this.ws.onopen = () => {
+            console.log('WebSocket连接已建立');
+            this.reconnectAttempts = 0;
+        };
+        
+        this.ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.handleMessage(data);
+        };
+        
+        this.ws.onclose = () => {
+            console.log('WebSocket连接已关闭');
+            this.attemptReconnect();
+        };
+        
+        this.ws.onerror = (error) => {
+            console.error('WebSocket错误:', error);
+        };
+    }
+    
+    handleMessage(data) {
+        // 分发消息到注册的回调函数
+        if (data.type && this.callbacks.has(data.type)) {
+            this.callbacks.get(data.type)(data);
+        }
+    }
+    
+    subscribe(messageType, callback) {
+        this.callbacks.set(messageType, callback);
+    }
+    
+    attemptReconnect() {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.reconnectAttempts++;
+            setTimeout(() => this.connect(), 2000 * this.reconnectAttempts);
+        }
+    }
+}
+```
+
+#### 2. 交互式地图实现
+
+```javascript
+// webapp/frontend/static/js/map.js
+class InteractiveMap {
+    constructor(containerId) {
+        this.map = L.map(containerId).setView([40.4267, -86.9137], 13);
+        this.vehicleMarkers = new Map();
+        this.orderMarkers = new Map();
+        this.chargingStationMarkers = new Map();
+        
+        // 添加地图图层
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(this.map);
+        
+        this.initializeMarkerLayers();
+    }
+    
+    initializeMarkerLayers() {
+        // 创建不同类型的标记层
+        this.vehicleLayer = L.layerGroup().addTo(this.map);
+        this.orderLayer = L.layerGroup().addTo(this.map);
+        this.chargingLayer = L.layerGroup().addTo(this.map);
+    }
+    
+    updateVehicles(vehicles) {
+        // 清除旧标记
+        this.vehicleLayer.clearLayers();
+        
+        vehicles.forEach(vehicle => {
+            const icon = this.getVehicleIcon(vehicle.status, vehicle.battery_percentage);
+            const marker = L.marker([vehicle.lat, vehicle.lon], { icon })
+                .bindPopup(this.createVehiclePopup(vehicle));
+            
+            this.vehicleLayer.addLayer(marker);
+        });
+    }
+    
+    getVehicleIcon(status, batteryLevel) {
+        let color;
+        if (status === 'charging') color = 'yellow';
+        else if (status === 'with_passenger') color = 'green';
+        else if (batteryLevel < 20) color = 'red';
+        else color = 'blue';
+        
+        return L.divIcon({
+            className: `vehicle-marker vehicle-${color}`,
+            html: `<div class="vehicle-icon">${this.getStatusSymbol(status)}</div>`,
+            iconSize: [20, 20]
+        });
+    }
+    
+    createVehiclePopup(vehicle) {
+        return `
+            <div class="vehicle-popup">
+                <h4>车辆 ${vehicle.id}</h4>
+                <p>状态: ${vehicle.status}</p>
+                <p>电量: ${vehicle.battery_percentage.toFixed(1)}%</p>
+                <p>位置: (${vehicle.lat.toFixed(4)}, ${vehicle.lon.toFixed(4)})</p>
+            </div>
+        `;
+    }
+}
+```
+
+#### 3. 实时图表更新
+
+```javascript
+// webapp/frontend/static/js/charts.js
+class RealTimeCharts {
+    constructor() {
+        this.charts = {};
+        this.dataBuffers = {};
+        this.maxDataPoints = 100;
+        
+        this.initializeCharts();
+    }
+    
+    initializeCharts() {
+        // 初始化收入图表
+        this.charts.revenue = new Chart(
+            document.getElementById('revenueChart'),
+            {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '累计收入',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { display: false },
+                        y: { beginAtZero: true }
+                    }
+                }
+            }
+        );
+        
+        // 初始化车辆状态分布图表
+        this.charts.vehicleStatus = new Chart(
+            document.getElementById('vehicleStatusChart'),
+            {
+                type: 'doughnut',
+                data: {
+                    labels: ['空闲', '前往接客', '载客中', '充电中'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: [
+                            '#36A2EB',
+                            '#FFCE56', 
+                            '#4BC0C0',
+                            '#FF6384'
+                        ]
+                    }]
+                }
+            }
+        );
+    }
+    
+    updateRevenueChart(revenue, timestamp) {
+        const chart = this.charts.revenue;
+        
+        // 添加新数据点
+        chart.data.labels.push(new Date(timestamp).toLocaleTimeString());
+        chart.data.datasets[0].data.push(revenue);
+        
+        // 限制数据点数量
+        if (chart.data.labels.length > this.maxDataPoints) {
+            chart.data.labels.shift();
+            chart.data.datasets[0].data.shift();
+        }
+        
+        chart.update('none'); // 无动画更新
+    }
+    
+    updateVehicleStatusChart(statusCounts) {
+        const chart = this.charts.vehicleStatus;
+        chart.data.datasets[0].data = [
+            statusCounts.idle || 0,
+            statusCounts.to_pickup || 0,
+            statusCounts.with_passenger || 0,
+            statusCounts.charging || 0
+        ];
+        chart.update();
+    }
+}
+```
+
+### 性能优化技术
+
+#### 1. 前端性能优化
+
+```javascript
+// 防抖函数，避免频繁更新UI
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// 批量DOM更新
+class BatchUpdater {
+    constructor() {
+        this.pendingUpdates = [];
+        this.updateScheduled = false;
+    }
+    
+    scheduleUpdate(updateFn) {
+        this.pendingUpdates.push(updateFn);
+        
+        if (!this.updateScheduled) {
+            this.updateScheduled = true;
+            requestAnimationFrame(() => {
+                this.processPendingUpdates();
+            });
+        }
+    }
+    
+    processPendingUpdates() {
+        this.pendingUpdates.forEach(updateFn => updateFn());
+        this.pendingUpdates = [];
+        this.updateScheduled = false;
+    }
+}
+```
+
+#### 2. 后端性能优化
+
+```python
+# 缓存机制
+from functools import lru_cache
+import redis
+
+class CacheManager:
+    def __init__(self):
+        self.redis_client = redis.Redis(host='localhost', port=6379, db=0)
+        
+    @lru_cache(maxsize=1000)
+    def get_route_distance(self, origin: int, destination: int) -> float:
+        """缓存路径距离计算"""
+        key = f"route:{origin}:{destination}"
+        
+        # 尝试从Redis获取
+        cached = self.redis_client.get(key)
+        if cached:
+            return float(cached)
+        
+        # 计算并缓存
+        distance = self.calculate_distance(origin, destination)
+        self.redis_client.setex(key, 3600, distance)  # 缓存1小时
+        return distance
+
+# 异步数据库操作
+import asyncpg
+
+class AsyncDataManager:
+    def __init__(self):
+        self.pool = None
+        
+    async def initialize_pool(self):
+        self.pool = await asyncpg.create_pool(
+            "postgresql://user:pass@localhost/db",
+            min_size=5,
+            max_size=20
+        )
+    
+    async def save_simulation_data(self, sim_id: str, data: dict):
+        """异步保存仿真数据"""
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                "INSERT INTO simulation_data (sim_id, data, timestamp) VALUES ($1, $2, $3)",
+                sim_id, json.dumps(data), datetime.now()
+            )
+```
+
+这套技术实现框架为电动车仿真系统提供了坚实的技术基础，确保系统的高性能、可扩展性和可维护性。Web应用系统的加入进一步提升了系统的交互性和实用性。 

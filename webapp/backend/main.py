@@ -66,6 +66,11 @@ async def charging_stations_page(request: Request):
     """Charging station tracking page"""
     return templates.TemplateResponse("charging-stations.html", {"request": request})
 
+@app.get("/config")
+async def config_page(request: Request):
+    """Configuration page"""
+    return templates.TemplateResponse("config.html", {"request": request})
+
 @app.get("/dashboard")
 async def dashboard(request: Request):
     """Simulation dashboard page"""

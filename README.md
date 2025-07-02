@@ -1,4 +1,4 @@
-# Electric Vehicle Simulation System | 电动车仿真系统
+# Electric Vehicle Fleet Simulation System | 电动车队仿真系统
 
 <div align="center">
 
@@ -7,9 +7,14 @@
 
 ---
 
-A comprehensive electric vehicle fleet simulation system based on real-world map data, simulating the complete process of electric vehicles picking up passengers, charging, and dispatching in urban environments.
+A comprehensive electric vehicle fleet simulation system featuring dual simulation engines, real-world map integration, and modern web interface for urban mobility analysis.
 
-基于真实地图数据的电动车辆运营仿真系统，模拟电动车辆在城市中接送乘客、充电和调度的完整过程。
+基于真实地图数据的电动车队仿真系统，提供双仿真引擎、现代化Web界面，专用于城市出行分析。
+
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Latest-green.svg)](https://fastapi.tiangolo.com/)
+[![OSMnx](https://img.shields.io/badge/OSMnx-2.0+-orange.svg)](https://osmnx.readthedocs.io/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
 
@@ -17,569 +22,517 @@ A comprehensive electric vehicle fleet simulation system based on real-world map
 
 ## English Documentation
 
-### Overview
+### 🌟 Overview
 
-This is a comprehensive electric vehicle fleet simulation system that models the complete lifecycle of electric vehicles operating in urban environments. The system includes passenger pickup and dropoff, charging station management, route planning, and vehicle dispatching based on real-world OpenStreetMap data.
+This is a state-of-the-art electric vehicle fleet simulation system designed for comprehensive urban mobility analysis. The system provides **dual simulation architectures** to meet different research and demonstration needs:
 
-### Key Features
+1. **🐍 Python Simulation Engine**: YAML-configured standalone simulation with matplotlib visualization
+2. **🌐 Web Application System**: Modern browser-based interface with real-time interaction
 
-- **Real-world Map Support**: Built on OpenStreetMap data, supports any city worldwide
-- **Complete Business Process**: Order generation, vehicle dispatching, route planning, charging management
-- **Real-time Visualization**: Dynamic display of vehicle positions, order status, charging station utilization
-- **Detailed Analytics**: Revenue statistics, vehicle utilization rates, charging efficiency metrics
-- **Flexible Configuration**: Customizable vehicle count, charging station locations, order generation rates
+Both systems share the same sophisticated simulation core while offering different user experiences and deployment scenarios.
 
-### System Architecture
+### ✨ Key Features
+
+#### 🏗️ **Dual Simulation Architecture**
+- **Standalone Python Engine**: Command-line driven with YAML configuration
+- **Web Application Interface**: Browser-based with real-time controls
+- **Shared Core Logic**: Both systems use identical simulation algorithms
+
+#### 🗺️ **Real-World Map Integration**
+- **OpenStreetMap Data**: Supports any city worldwide with automatic map downloading
+- **Realistic Road Networks**: Accurate distance calculations and route planning
+- **Smart Caching**: Efficient map data storage to avoid repeated downloads
+
+#### 🚗 **Comprehensive Vehicle Management**
+- **Fleet Operations**: Vehicle dispatching, passenger pickup/dropoff
+- **Battery Management**: Realistic battery consumption and charging behavior
+- **Intelligent Routing**: Shortest path algorithms on real road networks
+
+#### ⚡ **Advanced Charging Infrastructure**
+- **Distributed Charging Stations**: Strategic placement throughout the city
+- **Queue Management**: Realistic waiting times when stations are occupied
+- **Smart Charging**: Automatic low-battery vehicle redirection
+
+#### 📊 **Rich Analytics & Visualization**
+- **Real-time Monitoring**: Live vehicle tracking and system statistics
+- **Performance Metrics**: Revenue, utilization rates, efficiency analysis
+- **Multiple Output Formats**: Interactive charts, data exports, simulation reports
+
+### 🏗️ System Architecture
 
 ```
-ev-simulation/
-├── config/              # Configuration module
-│   └── simulation_config.py
-├── core/                # Core business modules
-│   ├── map_manager.py   # Map management
-│   ├── vehicle_manager.py # Vehicle management
-│   ├── order_system.py  # Order system
-│   ├── charging_manager.py # Charging management
-│   └── simulation_engine.py # Simulation engine
-├── models/              # Data models
-│   ├── vehicle.py       # Vehicle model
-│   ├── order.py         # Order model
-│   └── charging_station.py # Charging station model
-├── utils/               # Utility functions
-│   ├── geometry.py      # Geometric calculations
-│   └── path_utils.py    # Path processing
-├── visualization/       # Visualization module
-│   └── visualizer.py
-├── data/                # Data management
-│   └── data_manager.py
-└── main.py              # Main program entry
+EvsSimulation/
+├── 🐍 Python Simulation Engine
+│   ├── main.py                  # YAML-driven entry point
+│   ├── core/                    # Simulation engine modules
+│   │   ├── simulation_engine.py # Core simulation logic
+│   │   ├── vehicle_manager.py   # Vehicle fleet management
+│   │   ├── order_system.py      # Order generation & dispatching
+│   │   ├── charging_manager.py  # Charging infrastructure
+│   │   └── map_manager.py       # Map data & route planning
+│   ├── models/                  # Data models
+│   │   ├── vehicle.py           # Vehicle state & behavior
+│   │   ├── order.py             # Order lifecycle
+│   │   └── charging_station.py  # Charging station management
+│   ├── config/                  # Configuration system
+│   │   ├── yaml_config_manager.py # YAML configuration handler
+│   │   └── simulation_config.py   # Legacy config support
+│   ├── visualization/           # Matplotlib visualization
+│   │   └── visualizer.py        # Real-time visualization
+│   └── yaml_config/             # YAML configuration files
+│       ├── default.yaml         # Default configuration
+│       ├── west_lafayette_demo.yaml # Demo configuration
+│       └── headless_batch.yaml  # Batch processing config
+│
+├── 🌐 Web Application System
+│   ├── backend/                 # FastAPI backend
+│   │   ├── main.py              # Web server entry point
+│   │   ├── api/                 # REST API endpoints
+│   │   │   ├── simulation.py    # Simulation control API
+│   │   │   ├── data.py          # Data query API
+│   │   │   └── config.py        # Configuration API
+│   │   ├── websocket/           # Real-time communication
+│   │   │   └── simulation_ws.py # WebSocket handlers
+│   │   └── services/            # Business logic
+│   │       └── simulation_service.py # Simulation management
+│   └── frontend/                # Web interface
+│       ├── templates/           # HTML pages
+│       │   ├── index.html       # Main dashboard
+│       │   ├── vehicles.html    # Vehicle tracking
+│       │   ├── orders.html      # Order monitoring
+│       │   ├── charging-stations.html # Charging infrastructure
+│       │   └── config.html      # Configuration panel
+│       └── static/              # Frontend assets
+│           ├── js/              # JavaScript modules
+│           └── css/             # Stylesheets
+│
+└── 📁 Shared Resources
+    ├── data/                    # Data management
+    ├── utils/                   # Utility functions
+    ├── datasets/                # Map cache & simulation data
+    └── doc/                     # Comprehensive documentation
 ```
 
-### Installation
+### 🚀 Quick Start
 
-#### 1. Requirements
+#### 📋 Prerequisites
 
-- Python 3.8+
-- pip package manager
+- **Python 3.8+** with pip package manager
+- **Internet connection** for initial map data download
+- **Modern web browser** for web interface (Chrome/Firefox/Safari)
 
-#### 2. Install Dependencies
+#### ⚙️ Installation
 
 ```bash
-# Clone the project
-git clone <project-url>
-cd ev-simulation
+# Clone the repository
+git clone <repository-url>
+cd EvsSimulation
 
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate  # Windows
+# Create virtual environment (strongly recommended)
+python -m venv .venv
+
+# Activate virtual environment
+# Windows:
+.venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-#### 3. FFmpeg Installation (Optional, for MP4 generation)
+#### 🎯 Usage Examples
 
-- **Windows**: Download and install [FFmpeg](https://ffmpeg.org/download.html)
-- **Mac**: `brew install ffmpeg`
-- **Linux**: `sudo apt-get install ffmpeg`
-
-### Quick Start
-
-#### Basic Usage
+##### 1. Python Simulation (YAML-Driven)
 
 ```bash
-# Run with default configuration
+# Quick demo with default settings
 python main.py
 
-# Specify location
-python main.py -l "Beijing, China"
+# Use specific configuration
+python main.py -c yaml_config/west_lafayette_demo.yaml
 
-# Custom parameters
-python main.py -l "Shanghai, China" -v 30 -d 1800
+# Headless batch processing
+python main.py -c yaml_config/headless_batch.yaml
+
+# List available configurations
+python main.py --list
 ```
 
-#### Command Line Arguments
-
-```
-Basic Parameters:
-  -l, --location TEXT      Simulation location (default: West Lafayette, IN)
-  -v, --vehicles INT       Number of vehicles (default: 20)
-  -d, --duration INT       Simulation duration in seconds (default: 3600)
-  -c, --config FILE        Custom configuration file path
-
-Output Parameters:
-  -o, --output TEXT        Output filename (without extension)
-  -f, --format {html,mp4}  Animation format (default: html)
-
-Run Modes:
-  --headless              Headless mode (no visualization)
-  --no-animation          Disable animation generation
-
-Data Saving:
-  --save-data             Save simulation data
-  --report                Generate simulation report
-  --excel                 Export Excel file
-```
-
-#### Example Commands
+##### 2. Web Application
 
 ```bash
-# 1. Quick test (10 vehicles, 5 minutes)
-python main.py -v 10 -d 300
+# Activate virtual environment
+.venv\Scripts\activate
 
-# 2. Generate Beijing simulation report
-python main.py -l "Beijing, China" -v 50 -d 3600 --save-data --report
+# Start web server (run from project root)
+uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8080 --reload
 
-# 3. Batch simulation (no visualization)
-python main.py --headless -v 100 -d 7200 --save-data --excel
-
-# 4. Generate MP4 video
-python main.py -f mp4 -o beijing_simulation
-
-# 5. Use custom configuration
-python main.py -c my_config.json
+# Access web interface
+# Main Dashboard: http://127.0.0.1:8080
+# API Documentation: http://127.0.0.1:8080/docs
 ```
 
-### Configuration
+### 📖 Configuration System
 
-#### Default Configuration Parameters
+#### YAML Configuration (Python Engine)
 
-```python
-# Map parameters
-location = "West Lafayette, IN"  # Simulation location
+The Python simulation engine uses YAML files for complete configuration:
 
-# Vehicle parameters
-num_vehicles = 20               # Number of vehicles
-vehicle_speed = 50              # Vehicle speed (km/h)
-battery_capacity = 100.0        # Battery capacity (%)
-energy_consumption = 0.2        # Energy consumption rate (%/km)
-charging_threshold = 20.0       # Charging threshold (%)
+```yaml
+# Example: yaml_config/custom_simulation.yaml
+simulation:
+  name: "Custom EV Fleet Simulation"
+  location: "Manhattan, New York, NY, USA"
+  duration: 3600  # seconds
+  time_step: 0.1
 
-# Order parameters
-order_generation_rate = 5       # Order generation rate (orders/hour)
-base_price_per_km = 2.0        # Base price (currency/km)
+vehicles:
+  count: 25
+  battery_capacity: 75.0  # kWh
+  max_speed: 60  # km/h
+  charging_threshold: 20  # %
 
-# Charging station parameters
-num_charging_stations = 5       # Number of charging stations
-charging_rate = 1.0            # Charging rate (%/second)
-electricity_price = 0.8        # Electricity price (currency/kWh)
+orders:
+  generation_rate: 40  # orders per hour
+  base_price_per_km: 2.5  # $/km
+
+charging:
+  stations_count: 8
+  slots_per_station: 4
+  charging_power: 50  # kW
+
+visualization:
+  mode: "live"  # or "headless"
+  fps: 30
+
+data:
+  save_data: true
+  save_interval: 60  # seconds
 ```
 
-#### Custom Configuration File
+### 🎮 Web Interface Guide
 
-Create `custom_config.json`:
+#### 🏠 Main Dashboard (`/`)
+- **🎛️ Control Panel**: Create, start, pause, stop simulations
+- **🗺️ Interactive Map**: Real-time vehicle tracking with Leaflet integration
+- **📊 Live Statistics**: Revenue, utilization rates, performance metrics
+- **📈 Dynamic Charts**: Real-time data visualization
 
-```json
-{
-    "location": "Tokyo, Japan",
-    "num_vehicles": 50,
-    "num_charging_stations": 10,
-    "order_generation_rate": 10,
-    "simulation_duration": 7200
-}
+#### 🚗 Vehicle Tracking (`/vehicles`)
+- **📋 Fleet Overview**: Comprehensive vehicle status table
+- **🔋 Battery Monitoring**: Real-time battery level tracking
+- **📍 Location Tracking**: GPS coordinates and current status
+- **🔍 Filter & Search**: Advanced filtering capabilities
+
+#### 📦 Order Management (`/orders`)
+- **📝 Order Queue**: Pending and active order monitoring
+- **⏱️ Timing Analysis**: Wait times and completion statistics
+- **🎯 Assignment Tracking**: Vehicle-order assignment visualization
+- **📊 Performance Metrics**: Order completion rates and revenue
+
+#### ⚡ Charging Infrastructure (`/charging-stations`)
+- **🔌 Station Status**: Real-time charging station availability
+- **📈 Utilization Rates**: Usage statistics and efficiency metrics
+- **⏳ Queue Management**: Waiting vehicle tracking
+- **💰 Revenue Analysis**: Charging station profitability
+
+#### ⚙️ Configuration Panel (`/config`)
+- **🎛️ Simulation Parameters**: Vehicle count, duration, location
+- **🔧 System Settings**: Battery capacity, charging rates, pricing
+- **📊 Data Export Options**: Configure data saving and reporting
+- **🎨 Visualization Settings**: Display preferences and update rates
+
+### 📚 Documentation
+
+The project includes comprehensive documentation in the `doc/` directory:
+
+- **📖 README.md**: This overview document
+- **🏗️ PROJECT_ARCHITECTURE.md**: Detailed system architecture
+- **🔧 TECHNICAL_IMPLEMENTATION.md**: Implementation details
+- **📡 API_REFERENCE.md**: Web API documentation
+- **📊 DATA_MODELS.md**: Data structure reference
+- **⚙️ WEBAPP_EXPANSION_DESIGN.md**: Web system design
+- **🔍 SYSTEM_MODULES.md**: Module documentation
+- **❓ WEBAPP_TROUBLESHOOTING.md**: Common issues & solutions
+
+### 🚨 Troubleshooting
+
+#### Common Issues
+
+**Q: Map loading failed?**
+```
+✅ Solution: Check internet connection and try a different city name
+📝 Example: Use "Manhattan, New York, NY, USA" instead of "NYC"
 ```
 
-### Output Description
-
-#### 1. Animation Files
-
-- **HTML Format**: Can be opened directly in browser, supports interaction
-- **MP4 Format**: Standard video file, playable with any video player
-
-#### 2. Data Files
-
-Simulation results are saved in `simulation_output/run_[timestamp]/` directory:
-
-- `final_statistics.json` - Final statistics data
-- `vehicle_details.csv` - Detailed vehicle data
-- `station_details.csv` - Detailed charging station data
-- `simulation_report.md` - Simulation report
-- `simulation_results.xlsx` - Excel summary file
-
-#### 3. Statistical Charts
-
-- `vehicle_statistics.png` - Vehicle statistics distribution chart
-- `charging_station_revenue.png` - Charging station revenue comparison chart
-
-### System Features
-
-#### 1. Intelligent Dispatching Algorithm
-
-- Proximity-based allocation: Prioritize nearest available vehicles
-- Battery consideration: Low-battery vehicles excluded from order allocation
-- Charging timing: Automatic charging when idle
-
-#### 2. Real-world Route Planning
-
-- Shortest path algorithm based on actual road networks
-- Precise distance calculation considering road lengths
-- Smooth path tracking and vehicle movement
-
-#### 3. Dynamic Pricing Mechanism
-
-- Base pricing: Per-kilometer billing
-- Peak hours: Automatic price increase during rush hours
-- Supply-demand balance: Extensible dynamic pricing strategy
-
-#### 4. Charging Management
-
-- Distributed charging stations: Automatic optimal location selection
-- Queue mechanism: Wait when charging spots are full
-- Smart charging: Automatic charging station search for low battery
-
-### Extension Development
-
-#### Adding New Dispatching Strategies
-
-Modify the `find_best_vehicle_for_order` method in `core/order_system.py`:
-
-```python
-def find_best_vehicle_for_order(self, order_id: str, available_vehicles: List[Vehicle]) -> Optional[Vehicle]:
-    # Implement your dispatching algorithm
-    pass
+**Q: Web interface won't start?**
+```
+✅ Solution: Ensure you're running uvicorn from the project root directory
+📝 Command: uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8080 --reload
 ```
 
-#### Custom Charging Strategies
-
-Modify the `should_vehicle_charge` method in `core/charging_manager.py`:
-
-```python
-def should_vehicle_charge(self, vehicle: Vehicle) -> bool:
-    # Implement your charging decision logic
-    pass
+**Q: Python simulation crashes?**
+```
+✅ Solution: Verify virtual environment activation and dependency installation
+📝 Check: .venv\Scripts\activate && pip install -r requirements.txt
 ```
 
-#### Adding New Statistical Metrics
+### 📈 Performance Recommendations
 
-Add to the `get_final_statistics` method in `core/simulation_engine.py`:
+- **🖥️ For Demos**: Use web interface with 10-30 vehicles
+- **📊 For Analysis**: Use Python engine with headless mode
+- **🔍 For Development**: Use live visualization with small fleet sizes
+- **⚡ For Batch Processing**: Use headless configuration templates
 
-```python
-stats['custom_metric'] = calculate_custom_metric()
-```
+### 🤝 Contributing
 
-### Notes
+We welcome contributions! Please see our contribution guidelines:
 
-1. **Map Data**: First run will download map data from OpenStreetMap, requires internet connection
-2. **Caching**: Map data is cached in `graphml_files` directory to avoid repeated downloads
-3. **Performance**: Large-scale simulations (>100 vehicles) recommended to use headless mode
-4. **Memory Usage**: Long simulations consume significant memory, recommend periodic data saving
+1. **🍴 Fork** the repository
+2. **🌟 Create** a feature branch
+3. **✅ Add** tests for new functionality  
+4. **📝 Update** documentation
+5. **🔄 Submit** a pull request
 
-### Troubleshooting
+### 📜 License
 
-#### Q: Map loading failed?
-A: Check internet connection, ensure OpenStreetMap access. Try different location names, use more specific place names.
-
-#### Q: Animation generation is slow?
-A: Use `--headless` mode, or reduce vehicle count and simulation duration.
-
-#### Q: MP4 generation failed?
-A: Ensure FFmpeg is installed and added to system PATH.
-
-#### Q: How to improve simulation speed?
-A: 
-- Use headless mode: `--headless`
-- Reduce time precision: modify `time_step` parameter
-- Optimize algorithms: simplify route planning or dispatching logic
-
-### License
-
-MIT License
-
-### Contributing
-
-Issues and Pull Requests are welcome!
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
 ## 中文文档
 
-### 概述
+### 🌟 概述
 
-这是一个基于真实地图数据的电动车辆运营仿真系统，模拟电动车辆在城市中接送乘客、充电和调度的完整过程。系统包括乘客接送、充电站管理、路径规划和车辆调度等功能，基于真实的OpenStreetMap数据。
+这是一个先进的电动车队仿真系统，专为全面的城市出行分析而设计。系统提供**双仿真架构**以满足不同的研究和演示需求：
 
-### 功能特性
+1. **🐍 Python仿真引擎**：YAML配置驱动的独立仿真，支持matplotlib可视化
+2. **🌐 Web应用系统**：现代化浏览器界面，支持实时交互
 
-- **真实地图支持**：基于OpenStreetMap数据，支持全球任意城市
-- **完整业务流程**：订单生成、车辆调度、路径规划、充电管理
-- **实时可视化**：动态展示车辆位置、订单状态、充电站使用情况
-- **详细统计分析**：收入统计、车辆利用率、充电效率等关键指标
-- **灵活配置**：支持自定义车辆数量、充电站位置、订单生成率等参数
+两套系统共享相同的复杂仿真内核，同时提供不同的用户体验和部署场景。
 
-### 系统架构
+### ✨ 核心特性
 
-```
-ev-simulation/
-├── config/              # 配置模块
-│   └── simulation_config.py
-├── core/                # 核心业务模块
-│   ├── map_manager.py   # 地图管理
-│   ├── vehicle_manager.py # 车辆管理
-│   ├── order_system.py  # 订单系统
-│   ├── charging_manager.py # 充电管理
-│   └── simulation_engine.py # 仿真引擎
-├── models/              # 数据模型
-│   ├── vehicle.py       # 车辆模型
-│   ├── order.py         # 订单模型
-│   └── charging_station.py # 充电站模型
-├── utils/               # 工具函数
-│   ├── geometry.py      # 几何计算
-│   └── path_utils.py    # 路径处理
-├── visualization/       # 可视化模块
-│   └── visualizer.py
-├── data/                # 数据管理
-│   └── data_manager.py
-└── main.py              # 主程序入口
-```
+#### 🏗️ **双仿真架构**
+- **独立Python引擎**：命令行驱动，YAML配置
+- **Web应用界面**：浏览器访问，实时控制
+- **共享核心逻辑**：两套系统使用相同的仿真算法
 
-### 安装说明
+#### 🗺️ **真实地图集成**
+- **OpenStreetMap数据**：支持全球任意城市，自动地图下载
+- **真实路网**：精确距离计算和路径规划
+- **智能缓存**：高效地图数据存储，避免重复下载
 
-#### 1. 环境要求
+#### 🚗 **全面车队管理**
+- **车队运营**：车辆调度、乘客接送
+- **电池管理**：真实电池消耗和充电行为
+- **智能路径**：基于真实路网的最短路径算法
 
-- Python 3.8+
-- pip 包管理器
+#### ⚡ **先进充电基础设施**
+- **分布式充电站**：城市内战略性布局
+- **队列管理**：充电站占用时的真实等待时间
+- **智能充电**：低电量车辆自动重定向
 
-#### 2. 安装依赖
+### 🚀 快速开始
+
+#### 📋 环境要求
+
+- **Python 3.8+** 和 pip 包管理器
+- **网络连接** 用于初始地图数据下载
+- **现代浏览器** 用于Web界面 (Chrome/Firefox/Safari)
+
+#### ⚙️ 安装说明
 
 ```bash
-# 克隆项目
-git clone <项目地址>
-cd ev-simulation
+# 克隆仓库
+git clone <仓库地址>
+cd EvsSimulation
 
-# 创建虚拟环境（推荐）
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# 或
-venv\Scripts\activate  # Windows
+# 创建虚拟环境（强烈推荐）
+python -m venv .venv
+
+# 激活虚拟环境
+# Windows:
+.venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
 
 # 安装依赖
 pip install -r requirements.txt
 ```
 
-#### 3. FFmpeg安装（可选，用于生成MP4）
+#### 🎯 使用示例
 
-- **Windows**: 下载并安装 [FFmpeg](https://ffmpeg.org/download.html)
-- **Mac**: `brew install ffmpeg`
-- **Linux**: `sudo apt-get install ffmpeg`
-
-### 快速开始
-
-#### 基本使用
+##### 1. Python仿真（YAML驱动）
 
 ```bash
-# 使用默认配置运行
+# 使用默认设置的快速演示
 python main.py
 
-# 指定地点运行
-python main.py -l "Beijing, China"
+# 使用特定配置
+python main.py -c yaml_config/west_lafayette_demo.yaml
 
-# 自定义参数
-python main.py -l "Shanghai, China" -v 30 -d 1800
+# 无界面批处理
+python main.py -c yaml_config/headless_batch.yaml
+
+# 列出可用配置
+python main.py --list
 ```
 
-#### 命令行参数
-
-```
-基本参数:
-  -l, --location TEXT      仿真地点（默认: West Lafayette, IN）
-  -v, --vehicles INT       车辆数量（默认: 20）
-  -d, --duration INT       仿真时长，单位秒（默认: 3600）
-  -c, --config FILE        自定义配置文件路径
-
-输出参数:
-  -o, --output TEXT        输出文件名（不含扩展名）
-  -f, --format {html,mp4}  动画格式（默认: html）
-
-运行模式:
-  --headless              无头模式（无可视化）
-  --no-animation          禁用动画生成
-
-数据保存:
-  --save-data             保存仿真数据
-  --report                生成仿真报告
-  --excel                 导出Excel文件
-```
-
-#### 示例命令
+##### 2. Web应用
 
 ```bash
-# 1. 快速测试（10辆车，5分钟）
-python main.py -v 10 -d 300
+# 激活虚拟环境
+.venv\Scripts\activate
 
-# 2. 生成北京地区的仿真报告
-python main.py -l "Beijing, China" -v 50 -d 3600 --save-data --report
+# 启动Web服务器（在项目根目录运行）
+uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8080 --reload
 
-# 3. 批量仿真（无可视化）
-python main.py --headless -v 100 -d 7200 --save-data --excel
-
-# 4. 生成MP4视频
-python main.py -f mp4 -o beijing_simulation
-
-# 5. 使用自定义配置
-python main.py -c my_config.json
+# 访问Web界面
+# 主控制台: http://127.0.0.1:8080
+# API文档: http://127.0.0.1:8080/docs
 ```
 
-### 配置说明
+### 📖 配置系统
 
-#### 默认配置参数
+#### YAML配置（Python引擎）
 
-```python
-# 地图参数
-location = "West Lafayette, IN"  # 仿真地点
+Python仿真引擎使用YAML文件进行完整配置：
 
-# 车辆参数
-num_vehicles = 20               # 车辆数量
-vehicle_speed = 50              # 车速（km/h）
-battery_capacity = 100.0        # 电池容量（%）
-energy_consumption = 0.2        # 能耗率（%/km）
-charging_threshold = 20.0       # 充电阈值（%）
+```yaml
+# 示例: yaml_config/custom_simulation.yaml
+simulation:
+  name: "自定义电动车队仿真"
+  location: "北京市, 中国"
+  duration: 3600  # 秒
+  time_step: 0.1
 
-# 订单参数
-order_generation_rate = 5       # 订单生成率（订单/小时）
-base_price_per_km = 2.0        # 基础价格（元/km）
+vehicles:
+  count: 25
+  battery_capacity: 75.0  # kWh
+  max_speed: 60  # km/h
+  charging_threshold: 20  # %
 
-# 充电站参数
-num_charging_stations = 5       # 充电站数量
-charging_rate = 1.0            # 充电速率（%/秒）
-electricity_price = 0.8        # 电价（元/kWh）
+orders:
+  generation_rate: 40  # 订单/小时
+  base_price_per_km: 2.5  # 元/km
+
+charging:
+  stations_count: 8
+  slots_per_station: 4
+  charging_power: 50  # kW
+
+visualization:
+  mode: "live"  # 或 "headless"
+  fps: 30
+
+data:
+  save_data: true
+  save_interval: 60  # 秒
 ```
 
-#### 自定义配置文件
+### 🎮 Web界面指南
 
-创建 `custom_config.json`:
+#### 🏠 主控制台 (`/`)
+- **🎛️ 控制面板**：创建、启动、暂停、停止仿真
+- **🗺️ 交互地图**：基于Leaflet的实时车辆跟踪
+- **📊 实时统计**：收入、利用率、性能指标
+- **📈 动态图表**：实时数据可视化
 
-```json
-{
-    "location": "Tokyo, Japan",
-    "num_vehicles": 50,
-    "num_charging_stations": 10,
-    "order_generation_rate": 10,
-    "simulation_duration": 7200
-}
+#### 🚗 车辆跟踪 (`/vehicles`)
+- **📋 车队概览**：全面的车辆状态表格
+- **🔋 电池监控**：实时电池电量跟踪
+- **📍 位置跟踪**：GPS坐标和当前状态
+- **🔍 筛选搜索**：高级筛选功能
+
+#### 📦 订单管理 (`/orders`)
+- **📝 订单队列**：待处理和活跃订单监控
+- **⏱️ 时间分析**：等待时间和完成统计
+- **🎯 分配跟踪**：车辆-订单分配可视化
+- **📊 性能指标**：订单完成率和收入
+
+#### ⚡ 充电基础设施 (`/charging-stations`)
+- **🔌 充电站状态**：实时充电站可用性
+- **📈 利用率**：使用统计和效率指标
+- **⏳ 队列管理**：等待车辆跟踪
+- **💰 收入分析**：充电站盈利能力
+
+#### ⚙️ 配置面板 (`/config`)
+- **🎛️ 仿真参数**：车辆数量、持续时间、位置
+- **🔧 系统设置**：电池容量、充电速率、定价
+- **📊 数据导出选项**：配置数据保存和报告
+- **🎨 可视化设置**：显示偏好和更新速率
+
+### 📚 文档说明
+
+项目在 `doc/` 目录中包含全面的文档：
+
+- **📖 README.md**：概览文档
+- **🏗️ PROJECT_ARCHITECTURE.md**：详细系统架构
+- **🔧 TECHNICAL_IMPLEMENTATION.md**：实现细节
+- **📡 API_REFERENCE.md**：Web API文档
+- **📊 DATA_MODELS.md**：数据结构参考
+- **⚙️ WEBAPP_EXPANSION_DESIGN.md**：Web系统设计
+- **🔍 SYSTEM_MODULES.md**：模块文档
+- **❓ WEBAPP_TROUBLESHOOTING.md**：常见问题解决
+
+### 🚨 故障排除
+
+#### 常见问题
+
+**Q: 地图加载失败？**
+```
+✅ 解决方案：检查网络连接，尝试不同的城市名称
+📝 示例：使用"北京市, 中国"而不是"北京"
 ```
 
-### 输出说明
-
-#### 1. 动画文件
-
-- **HTML格式**：可在浏览器中直接打开，支持交互
-- **MP4格式**：标准视频文件，可用任意播放器观看
-
-#### 2. 数据文件
-
-仿真结果保存在 `simulation_output/run_[时间戳]/` 目录下：
-
-- `final_statistics.json` - 最终统计数据
-- `vehicle_details.csv` - 车辆详细数据
-- `station_details.csv` - 充电站详细数据
-- `simulation_report.md` - 仿真报告
-- `simulation_results.xlsx` - Excel汇总文件
-
-#### 3. 统计图表
-
-- `vehicle_statistics.png` - 车辆统计分布图
-- `charging_station_revenue.png` - 充电站收入对比图
-
-### 系统特性
-
-#### 1. 智能调度算法
-
-- 就近分配原则：优先分配距离最近的空闲车辆
-- 电量考虑：低电量车辆不参与订单分配
-- 充电时机：空闲时自动前往最近充电站
-
-#### 2. 真实路径规划
-
-- 基于实际道路网络的最短路径算法
-- 考虑道路长度的精确距离计算
-- 平滑的路径跟踪和车辆移动
-
-#### 3. 动态定价机制
-
-- 基础价格：按公里计费
-- 高峰时段：早晚高峰自动提价
-- 供需平衡：可扩展的动态定价策略
-
-#### 4. 充电管理
-
-- 分布式充电站：自动选择最优位置
-- 排队机制：充电位满时等待
-- 智能充电：低电量自动寻找充电站
-
-### 扩展开发
-
-#### 添加新的调度策略
-
-在 `core/order_system.py` 中修改 `find_best_vehicle_for_order` 方法：
-
-```python
-def find_best_vehicle_for_order(self, order_id: str, available_vehicles: List[Vehicle]) -> Optional[Vehicle]:
-    # 实现你的调度算法
-    pass
+**Q: Web界面无法启动？**
+```
+✅ 解决方案：确保从项目根目录运行uvicorn命令
+📝 命令：uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8080 --reload
 ```
 
-#### 自定义充电策略
-
-在 `core/charging_manager.py` 中修改 `should_vehicle_charge` 方法：
-
-```python
-def should_vehicle_charge(self, vehicle: Vehicle) -> bool:
-    # 实现你的充电决策逻辑
-    pass
+**Q: Python仿真崩溃？**
+```
+✅ 解决方案：验证虚拟环境激活和依赖安装
+📝 检查：.venv\Scripts\activate && pip install -r requirements.txt
 ```
 
-#### 添加新的统计指标
+### 📈 性能建议
 
-在 `core/simulation_engine.py` 的 `get_final_statistics` 方法中添加：
+- **🖥️ 演示用途**：使用Web界面，10-30辆车
+- **📊 分析用途**：使用Python引擎，无界面模式
+- **🔍 开发用途**：使用实时可视化，小车队规模
+- **⚡ 批处理**：使用无界面配置模板
 
-```python
-stats['custom_metric'] = calculate_custom_metric()
-```
+### 🤝 贡献指南
 
-### 注意事项
+欢迎贡献！请查看我们的贡献指南：
 
-1. **地图数据**：首次运行会从OpenStreetMap下载地图数据，需要网络连接
-2. **缓存机制**：地图数据会缓存在 `graphml_files` 目录，避免重复下载
-3. **性能考虑**：大规模仿真（>100辆车）建议使用无头模式
-4. **内存使用**：长时间仿真会占用较多内存，建议定期保存数据
+1. **🍴 Fork** 仓库
+2. **🌟 创建** 功能分支
+3. **✅ 添加** 新功能测试
+4. **📝 更新** 文档
+5. **🔄 提交** Pull Request
 
-### 常见问题
+### 📜 许可证
 
-#### Q: 地图加载失败？
-A: 检查网络连接，确保能访问OpenStreetMap。尝试更换地点名称，使用更具体的地名。
-
-#### Q: 动画生成很慢？
-A: 使用 `--headless` 模式运行，或减少车辆数量和仿真时长。
-
-#### Q: MP4生成失败？
-A: 确保已安装FFmpeg，并添加到系统PATH。
-
-#### Q: 如何提高仿真速度？
-A: 
-- 使用无头模式：`--headless`
-- 减少时间精度：修改 `time_step` 参数
-- 优化算法：简化路径规划或调度逻辑
-
-### 许可证
-
-MIT License
-
-### 贡献指南
-
-欢迎提交Issue和Pull Request！
-
-### 联系方式
-
-如有问题或建议，请通过Issue联系。
+本项目基于MIT许可证 - 详情请查看 [LICENSE](LICENSE) 文件。
 
 ---
 
 <div align="center">
 
 **Navigation / 导航:**
-[🔝 Back to Top / 返回顶部](#electric-vehicle-simulation-system--电动车仿真系统) | 
+[🔝 Back to Top / 返回顶部](#electric-vehicle-fleet-simulation-system--电动车队仿真系统) | 
 [🇺🇸 English](#english-documentation) | 
 [🇨🇳 中文](#中文文档)
 
-</div>
+**Quick Links / 快速链接:**
+[📖 Documentation / 文档](doc/) | 
+[🚀 Quick Start / 快速开始](#quick-start) | 
+[⚙️ Configuration / 配置](#configuration-system) | 
+[🎮 Web Interface / Web界面](#web-interface-guide)
+
+</div> 
