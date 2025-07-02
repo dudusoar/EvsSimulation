@@ -75,26 +75,26 @@ webapp/
 
 ## 🚀 快速启动
 
-### 方法1: 使用启动脚本 (推荐)
+### 推荐启动方式
 ```bash
-# 在项目根目录运行
-python webapp/run.py
+# 在项目根目录运行（激活虚拟环境后）
+.venv\Scripts\Activate.ps1
+uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8080 --reload
 ```
 
-### 方法2: 手动启动
+### 备用启动方式
 ```bash
 # 1. 安装依赖
-cd webapp/backend
-pip install -r requirements.txt
+pip install -r webapp/backend/requirements.txt
 
-# 2. 启动服务器
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# 2. 启动服务器（在项目根目录）
+uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8080 --reload
 ```
 
 ### 3. 访问应用
-- **主界面**: http://localhost:8000
-- **API文档**: http://localhost:8000/docs
-- **WebSocket**: ws://localhost:8000/ws/simulation
+- **主界面**: http://127.0.0.1:8080
+- **API文档**: http://127.0.0.1:8080/docs
+- **WebSocket**: ws://127.0.0.1:8080/ws/simulation
 
 ## 🔧 技术栈
 
@@ -192,6 +192,16 @@ from config.simulation_config import SIMULATION_CONFIG  # 复用现有配置
 - `GET /api/simulation/status` - 获取状态
 - `GET /api/data/vehicles` - 获取车辆数据
 - `WebSocket /ws/simulation` - 实时数据推送
+
+### ⚠️ 重要提醒
+**必须在项目根目录使用uvicorn命令启动**，不要使用run.py脚本！
+```bash
+# ✅ 正确方式（在项目根目录）
+uvicorn webapp.backend.main:app --host 127.0.0.1 --port 8080 --reload
+
+# ❌ 错误方式（会找不到模块）
+python webapp/run.py
+```
 
 ### 前端组件
 - `app.js` - 主应用逻辑
