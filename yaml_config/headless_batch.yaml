@@ -1,0 +1,43 @@
+# EV仿真系统配置文件
+# 生成时间: 2024-12-20
+# 配置格式版本: 2.0
+# 配置名称: 批处理无界面模式
+
+simulation:
+  name: "批处理仿真 - 高速无界面"
+  location: "West Lafayette, Indiana, USA"
+  duration: 60.0                           # 1分钟仿真
+  time_step: 0.1
+
+vehicles:
+  count: 50                               # 更多车辆用于批处理
+  speed: 400.0                           
+  battery:
+    capacity: 100.0
+    charging_threshold: 30.0              # 更低的充电阈值
+    consumption_rate: 1.0                 # 更低的能耗率
+
+orders:
+  generation_rate: 2000                   # 更高的订单生成率
+  pricing:
+    base_price_per_km: 2.5               # 更高的价格
+    surge_multiplier: 2.0                # 更高的高峰倍数
+  max_waiting_time: 300.0                # 更短的等待时间
+
+charging_stations:
+  count: 8                               # 更多充电站
+  slots_per_station: 4                   # 更多充电桩
+  charging_rate: 8.0                     # 更快充电
+  electricity_price: 0.6                 # 更便宜的电价
+
+visualization:
+  mode: headless                         # 无界面模式
+  enable_animation: false                # 不需要动画
+  animation_fps: 30
+  save_animation: false                  # 不保存动画
+  animation_format: "html"
+
+data:
+  save_data: true                        # 启用数据保存
+  save_interval: 10.0                    # 每10秒报告一次进度
+  output_dir: "batch_simulation_output"   # 专门的输出目录 

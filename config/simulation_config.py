@@ -1,14 +1,53 @@
 """
 Simulation Configuration Parameters Module
-Contains all simulation-related configuration parameters
+现在支持YAML配置驱动，同时保持向后兼容性
 """
 
+<<<<<<< HEAD
 # ============= Basic Simulation Parameters =============
 
 # Modelling
 SIMULATION_CONFIG = {
+=======
+from .yaml_config_manager import config_manager, SimulationConfigModel
+from typing import Dict, Any
+import os
+
+# ============= YAML配置系统 =============
+def get_config(config_file: str = "default.yaml") -> Dict[str, Any]:
+    """获取配置，优先使用YAML配置，fallback到传统配置
+    
+    Args:
+        config_file: YAML配置文件名
+        
+    Returns:
+        配置字典，格式兼容传统系统
+    """
+    try:
+        # 尝试加载YAML配置
+        yaml_config = config_manager.load_config(config_file)
+        return config_manager.to_legacy_format(yaml_config)
+    except Exception as e:
+        print(f"YAML配置加载失败，使用默认配置: {e}")
+        return DEFAULT_CONFIG
+
+def load_yaml_config(config_file: str = "default.yaml") -> SimulationConfigModel:
+    """直接加载YAML配置模型"""
+    return config_manager.load_config(config_file)
+
+def save_yaml_config(config: SimulationConfigModel, config_file: str = "default.yaml") -> bool:
+    """保存YAML配置"""
+    return config_manager.save_config(config, config_file)
+
+def convert_dict_to_yaml(config_dict: Dict) -> SimulationConfigModel:
+    """将字典配置转换为YAML配置"""
+    return config_manager.convert_legacy_config(config_dict)
+
+# ============= 默认配置 (向后兼容) =============
+DEFAULT_CONFIG = {
+>>>>>>> master
     # Map parameters
-    'location': "Manhattan, New York, NY, USA",
+    'location': "West Lafayette, Indiana, USA",
     'cache_map': True,                # Whether to cache map data
     
     # Time parameters
@@ -17,11 +56,11 @@ SIMULATION_CONFIG = {
     
     # Vehicle parameters
     'num_vehicles': 20,               # Number of vehicles
-    'vehicle_speed': 200,             # Vehicle speed (km/h) - Significantly increased!
-    'vehicle_speed_mps': 200 / 3.6,  # Vehicle speed (m/s)
+    'vehicle_speed': 400,             # Vehicle speed (km/h) - SUPER FAST for demo! 🚀
+    'vehicle_speed_mps': 400 / 3.6,  # Vehicle speed (m/s)
     'battery_capacity': 100.0,        # Battery capacity (%)
-    'energy_consumption': 0.8,        # Energy consumption rate (%/km) - Increased consumption to quickly see charging
-    'charging_threshold': 30.0,       # Charging threshold (%) - Increased threshold to trigger charging more easily
+    'energy_consumption': 1.2,        # Energy consumption rate (%/km) - Higher consumption for more action
+    'charging_threshold': 40.0,       # Charging threshold (%) - Higher threshold for more charging activity
     
     # Order parameters
     'order_generation_rate': 1000,    # Order generation rate (orders/hour) - Very bold increase!
@@ -33,12 +72,12 @@ SIMULATION_CONFIG = {
     'num_charging_stations': 5,       # Number of charging stations
     'charging_slots_per_station': 3,  # Number of charging slots per station
     'charging_power': 50,             # Charging power (kW)
-    'charging_rate': 2.0,             # Charging rate (%/second) - Increased charging speed
+    'charging_rate': 5.0,             # Charging rate (%/second) - SUPER FAST charging! ⚡
     'electricity_price': 0.8,         # Electricity price (USD/kWh)
     
     # Visualization parameters
     'enable_animation': True,         # Whether to enable animation
-    'animation_fps': 30,              # Animation frame rate
+    'animation_fps': 60,              # Animation frame rate - Higher FPS for smoother animation
     'show_preview': False,            # Whether to show preview
     'save_animation': True,           # Whether to save animation
     'animation_format': 'html',       # Animation format ('html' or 'mp4')
@@ -48,6 +87,9 @@ SIMULATION_CONFIG = {
     'data_save_interval': 10,         # Data save interval (seconds)
     'output_dir': 'simulation_output' # Output directory
 }
+
+# 向后兼容：保持SIMULATION_CONFIG变量
+SIMULATION_CONFIG = get_config()
 
 # ============= Vehicle Status Definitions =============
 VEHICLE_STATUS = {

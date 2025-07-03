@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charging Station Tracking - EV Simulation</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-car-electric"></i> EV Simulation Dashboard
+            </a>
+            
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" href="/vehicles" target="_blank">
+                    <i class="fas fa-car"></i> Vehicle Tracking
+                </a>
+                <a class="nav-link" href="/orders" target="_blank">
+                    <i class="fas fa-clipboard-list"></i> Order Tracking
+                </a>
+                <a class="nav-link active" href="/charging-stations">
+                    <i class="fas fa-charging-station"></i> Charging Stations
+                </a>
+                <a class="nav-link" href="/config" target="_blank">
+                    <i class="fas fa-cog"></i> Configuration
+                </a>
+            </div>
+            
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text" id="connectionStatus">
+                    <i class="fas fa-circle text-secondary"></i> Connecting...
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <!-- Header -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-charging-station"></i> Charging Station Tracking</h2>
+                    <div>
+                        <a href="/" class="btn btn-success me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <button class="btn btn-outline-primary" id="refreshBtn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-outline-secondary" id="autoRefreshBtn" data-auto="true">
+                            <i class="fas fa-play"></i> Auto Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title">Total Stations</h6>
+                                <h4 class="mb-0" id="totalStations">-</h4>
+                            </div>
+                            <div class="text-white-50">
+                                <i class="fas fa-charging-station fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title">Available Slots</h6>
+                                <h4 class="mb-0" id="availableSlots">-</h4>
+                            </div>
+                            <div class="text-white-50">
+                                <i class="fas fa-plug fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title">Occupied Slots</h6>
+                                <h4 class="mb-0" id="occupiedSlots">-</h4>
+                            </div>
+                            <div class="text-white-50">
+                                <i class="fas fa-car-battery fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-danger">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="flex-grow-1">
+                                <h6 class="card-title">Utilization Rate</h6>
+                                <h4 class="mb-0" id="utilizationRate">-</h4>
+                            </div>
+                            <div class="text-white-50">
+                                <i class="fas fa-chart-pie fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Filters</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Availability Filter</label>
+                                <select class="form-select" id="availabilityFilter">
+                                    <option value="">All Stations</option>
+                                    <option value="available">Available</option>
+                                    <option value="full">Full</option>
+                                    <option value="partial">Partially Full</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Search Station ID</label>
+                                <input type="text" class="form-control" id="stationSearch" placeholder="Enter station ID...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Min Utilization %</label>
+                                <input type="range" class="form-range" id="utilizationRange" min="0" max="100" value="0">
+                                <small class="text-muted">≥ <span id="utilizationValue">0</span>%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charging Stations Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-list"></i> Charging Station Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Station ID</th>
+                                        <th>Status</th>
+                                        <th>Slots</th>
+                                        <th>Utilization</th>
+                                        <th>Position</th>
+                                        <th>Charging Vehicles</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stationsTableBody">
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Station Detail Modal -->
+    <div class="modal fade" id="stationDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-charging-station"></i> Charging Station Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="stationDetailContent">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/charging-stations.js"></script>
+</body>
+</html> 

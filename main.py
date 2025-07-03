@@ -1,312 +1,283 @@
+#!/usr/bin/env python3
 """
-Electric Vehicle Simulation System Main Program - 修复版本
-Program entry point, handles command line arguments and coordinates module execution
+Electric Vehicle Simulation System - YAML配置驱动版本
+统一的程序入口，完全由YAML配置文件控制所有参数
 """
 
 import argparse
 import sys
-import json
-import asyncio
-from datetime import datetime
-import os
+import time
+import traceback
+from pathlib import Path
 
-from config.simulation_config import SIMULATION_CONFIG
-from core.simulation_engine import SimulationEngine
-from visualization.visualizer import Visualizer
-from data.data_manager import DataManager
+# 添加项目路径
+sys.path.append(str(Path(__file__).parent))
 
-# Import realtime visualizer (only when needed and available)
-def import_realtime_visualizer():
-    """Lazy import of realtime visualizer - optional dependency"""
+def run_live_simulation(engine, yaml_config):
+    """运行实时可视化仿真"""
+    from visualization.visualizer import Visualizer
+    
+    print("🎨 初始化可视化系统...")
+    # 转换为传统配置格式给Visualizer使用
+    from config.yaml_config_manager import config_manager
+    legacy_config = config_manager.to_legacy_format(yaml_config)
+    
+    visualizer = Visualizer(
+        simulation_engine=engine,
+        config=legacy_config
+    )
+    
+    print("▶️ 开始实时仿真...")
+    print(f"⏱️ 目标时长: {yaml_config.simulation.duration}秒")
+    print(f"📊 进度报告间隔: {yaml_config.data.save_interval}秒")
+    print("\n按 Ctrl+C 可以提前停止仿真")
+    
     try:
-        from realtime_visualizer.realtime_visualizer import RealtimeVisualizer
-        return RealtimeVisualizer
-    except ImportError as e:
-        print(f"⚠️  Real-time visualizer not available: {e}")
-        print("💡 To enable real-time web visualization, install dependencies:")
-        print("   pip install websockets aiohttp")
-        print("📊 You can still use traditional simulation modes")
+        final_stats = visualizer.run_live_simulation(
+            duration=yaml_config.simulation.duration
+        )
+        print("\n🎉 实时仿真完成！")
+        print("✅ 详细统计信息已在可视化窗口中显示")
+        return final_stats
+        
+    except KeyboardInterrupt:
+        print("\n⏹️ 用户中断仿真")
         return None
     except Exception as e:
-        print(f"⚠️  Real-time visualizer module error: {e}")
-        print("📊 Falling back to traditional simulation")
+        print(f"\n❌ 仿真过程中出错: {e}")
         return None
 
-
-def load_custom_config(config_file: str) -> dict:
-    """Load custom configuration file"""
+def run_headless_simulation(engine, yaml_config):
+    """运行无界面仿真"""
+    print("⚡ 开始无界面仿真...")
+    print(f"⏱️ 目标时长: {yaml_config.simulation.duration}秒")
+    print(f"📊 进度报告间隔: {yaml_config.data.save_interval}秒")
+    
+    duration = yaml_config.simulation.duration
+    progress_interval = yaml_config.data.save_interval
+    
+    start_time = time.time()
+    next_progress_time = progress_interval
+    
     try:
-        with open(config_file, 'r', encoding='utf-8') as f:
-            custom_config = json.load(f)
-        # Merge configurations
-        config = SIMULATION_CONFIG.copy()
-        config.update(custom_config)
-        return config
+        while engine.current_time < duration:
+            # 批量运行直到下一个进度报告点
+            target_time = min(next_progress_time, duration)
+            
+            while engine.current_time < target_time:
+                engine.run_step()
+            
+            # 输出进度报告
+            if engine.current_time >= next_progress_time:
+                elapsed_real = time.time() - start_time
+                progress = (engine.current_time / duration) * 100
+                stats = engine.get_current_statistics()
+                
+                print(f"\n📈 进度报告 ({progress:.1f}%):")
+                print(f"   - 仿真时间: {engine.current_time:.1f}s / {duration:.1f}s")
+                print(f"   - 实际用时: {elapsed_real:.1f}s")
+                print(f"   - 完成订单: {stats.get('orders', {}).get('total_orders_completed', 0)}")
+                print(f"   - 当前收入: ${stats.get('orders', {}).get('total_revenue', 0):.2f}")
+                
+                next_progress_time += progress_interval
+        
+        print(f"\n🎉 无界面仿真完成！")
+        
+        # 最终统计
+        total_time = time.time() - start_time
+        final_stats = engine.get_final_statistics()
+        print(f"\n📊 最终统计:")
+        print(f"   - 仿真时长: {duration}秒")
+        print(f"   - 实际用时: {total_time:.2f}秒")
+        print(f"   - 加速比: {duration/total_time:.1f}x")
+        
+        # 显示详细结果
+        summary = final_stats.get('summary', {})
+        print(f"   - 总收入: ${summary.get('total_revenue', 0):.2f}")
+        print(f"   - 总成本: ${summary.get('total_cost', 0):.2f}")
+        print(f"   - 总利润: ${summary.get('total_profit', 0):.2f}")
+        print(f"   - 完成订单: {final_stats.get('orders', {}).get('total_orders_completed', 0)}")
+        print(f"   - 订单完成率: {summary.get('order_completion_rate', 0)*100:.1f}%")
+        print(f"   - 车辆利用率: {summary.get('vehicle_utilization_rate', 0)*100:.1f}%")
+        
+        return final_stats
+        
+    except KeyboardInterrupt:
+        print(f"\n⏹️ 用户中断仿真")
+        return None
     except Exception as e:
-        print(f"Failed to load configuration file: {e}")
-        return SIMULATION_CONFIG
+        print(f"\n❌ 仿真过程中出错: {e}")
+        return None
 
+def save_simulation_data(final_stats, yaml_config):
+    """保存仿真数据（如果配置了数据保存）"""
+    if yaml_config.data.save_data and final_stats:
+        print("\n💾 保存仿真数据...")
+        try:
+            from data.data_manager import DataManager
+            
+            data_manager = DataManager(
+                location=yaml_config.simulation.location,
+                num_vehicles=yaml_config.vehicles.count,
+                duration=yaml_config.simulation.duration
+            )
+            
+            data_manager.save_simulation_results(final_stats)
+            print("✅ 仿真数据保存成功")
+            
+            # 可以在这里添加更多数据处理逻辑
+            # 比如生成报告、导出Excel等
+            
+        except Exception as e:
+            print(f"❌ 保存仿真数据失败: {e}")
 
-def check_dependencies():
-    """检查依赖项是否安装"""
+def list_available_configs():
+    """列出可用的配置文件"""
+    from config.yaml_config_manager import config_manager
+    
+    print("📁 可用的YAML配置文件:")
+    configs = config_manager.list_configs()
+    
+    if not configs:
+        print("   (没有找到配置文件)")
+        return
+    
+    for i, config_file in enumerate(configs, 1):
+        try:
+            config = config_manager.load_config(config_file)
+            print(f"   {i}. {config_file}")
+            print(f"      名称: {config.simulation.name}")
+            print(f"      位置: {config.simulation.location}")
+            print(f"      模式: {config.visualization.mode}")
+            print(f"      车辆: {config.vehicles.count}辆")
+            print(f"      时长: {config.simulation.duration}秒")
+            print(f"      数据保存: {'是' if config.data.save_data else '否'}")
+        except Exception as e:
+            print(f"   {i}. {config_file} (读取失败: {e})")
+
+def run_simulation(config_file: str = "default.yaml"):
+    """运行仿真的主函数"""
+    print(f"🚀 EV仿真系统 - YAML配置驱动")
+    print(f"📁 配置文件: {config_file}")
+    print("=" * 60)
+    
     try:
-        import websockets
-        import aiohttp
+        # 1. 加载YAML配置
+        from config.yaml_config_manager import config_manager
+        print(f"📋 正在加载配置文件: {config_file}")
+        yaml_config = config_manager.load_config(config_file)
+        
+        # 显示配置信息
+        print(f"✅ 配置加载成功:")
+        print(f"   - 仿真名称: {yaml_config.simulation.name}")
+        print(f"   - 地点: {yaml_config.simulation.location}")
+        print(f"   - 运行模式: {yaml_config.visualization.mode}")
+        print(f"   - 车辆数: {yaml_config.vehicles.count}")
+        print(f"   - 时长: {yaml_config.simulation.duration}秒")
+        print(f"   - 数据保存: {'开启' if yaml_config.data.save_data else '关闭'}")
+        if yaml_config.data.save_data:
+            print(f"   - 保存间隔: {yaml_config.data.save_interval}秒")
+        
+        # 2. 转换为传统格式（兼容现有引擎）
+        legacy_config = config_manager.to_legacy_format(yaml_config)
+        
+        # 3. 初始化仿真引擎
+        print("\n🔧 初始化仿真引擎...")
+        from core.simulation_engine import SimulationEngine
+        engine = SimulationEngine(legacy_config)
+        
+        # 4. 根据配置的模式运行仿真
+        mode = yaml_config.visualization.mode.lower()
+        final_stats = None
+        
+        if mode == "live":
+            print("\n🎮 启动实时可视化模式...")
+            final_stats = run_live_simulation(engine, yaml_config)
+        elif mode == "headless":
+            print("\n🖥️ 启动无界面模式...")
+            final_stats = run_headless_simulation(engine, yaml_config)
+        else:
+            print(f"❌ 未知的运行模式: {mode}")
+            print("   支持的模式: live, headless")
+            return False
+        
+        # 5. 保存数据（如果配置了）
+        save_simulation_data(final_stats, yaml_config)
+        
         return True
-    except ImportError:
+        
+    except FileNotFoundError as e:
+        print(f"❌ 配置文件不存在: {e}")
+        print("💡 使用 --list 查看可用的配置文件")
+        return False
+    except Exception as e:
+        print(f"❌ 运行失败: {e}")
+        print(f"错误详情: {traceback.format_exc()}")
         return False
 
-
-def run_realtime_simulation(config: dict, args):
-    """运行实时可视化仿真"""
-    print("\n🚀 Starting Real-time Visualization System...")
-    print("=" * 60)
-    
-    # 尝试导入实时可视化模块
-    RealtimeVisualizer = import_realtime_visualizer()
-    
-    if RealtimeVisualizer is None:
-        print("\n❌ Real-time visualization is not available!")
-        print("🔄 Falling back to traditional simulation mode...")
-        print("=" * 60)
-        return run_traditional_simulation(config, args)
-    
-    # 检查依赖
-    if not check_dependencies():
-        print("❌ Missing dependencies for real-time visualization!")
-        print("Please install required packages:")
-        print("  pip install websockets>=11.0.0 aiohttp>=3.8.0")
-        print("\n🔄 Falling back to traditional simulation mode...")
-        return run_traditional_simulation(config, args)
-    
-    # 更新配置
-    if args.location:
-        config['location'] = args.location
-    if args.vehicles:
-        config['num_vehicles'] = args.vehicles
-    if args.duration:
-        config['simulation_duration'] = args.duration
-        
-    print(f"Configuration:")
-    print(f"- Location: {config.get('location', 'West Lafayette, IN')}")
-    print(f"- Vehicles: {config.get('num_vehicles', 20)}")
-    print(f"- Duration: {config.get('simulation_duration', 3600)} seconds")
-    print(f"- Mode: Real-time Interactive Visualization")
-    print()
-    print("📡 Services will be available at:")
-    print("   Frontend: http://localhost:8080")
-    print("   WebSocket: ws://localhost:8765")
-    print()
-    print("Press Ctrl+C to stop the server")
-    print("=" * 60)
-    
-    async def run_realtime():
-        visualizer = RealtimeVisualizer(config=config)
-        try:
-            await visualizer.start()
-            print("\n✅ Real-time Visualizer started successfully!")
-            print("🌐 Open your browser and go to: http://localhost:8080")
-            print("⌨️  Press Ctrl+C to stop")
-            
-            # Keep running until interrupted
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            print("\n\n🛑 Shutting down Real-time Visualizer...")
-            await visualizer.stop()
-            print("✅ Real-time Visualizer stopped successfully")
-        except Exception as e:
-            print(f"\n❌ Error in real-time visualizer: {e}")
-            print("🔄 Falling back to traditional simulation...")
-            await visualizer.stop()
-            return run_traditional_simulation(config, args)
-    
-    # Run the realtime visualizer
-    try:
-        return asyncio.run(run_realtime())
-    except KeyboardInterrupt:
-        print("\n🛑 Real-time Visualizer interrupted by user")
-    except Exception as e:
-        print(f"\n❌ Failed to start real-time visualizer: {e}")
-        print("🔄 Falling back to traditional simulation...")
-        return run_traditional_simulation(config, args)
-
-
-def run_traditional_simulation(config: dict, args):
-    """运行传统仿真"""
-    print("=" * 60)
-    print("EV Driver Simulation System - Traditional Mode")
-    print("=" * 60)
-    
-    # Update configuration
-    if args.location:
-        config['location'] = args.location
-    if args.vehicles:
-        config['num_vehicles'] = args.vehicles
-    if args.duration:
-        config['simulation_duration'] = args.duration
-    if args.no_animation:
-        config['enable_animation'] = False
-    
-    # Print configuration information
-    print(f"\nSimulation Configuration:")
-    print(f"- Location: {config['location']}")
-    print(f"- Vehicles: {config['num_vehicles']}")
-    print(f"- Duration: {config['simulation_duration']} seconds")
-    print(f"- Charging stations: {config['num_charging_stations']}")
-    print(f"- Order generation rate: {config['order_generation_rate']} orders/hour")
-    
-    # Initialize data manager
-    data_manager = None
-    if config.get('save_data', False) or args.save_data:
-        data_manager = DataManager()
-    
-    # Initialize simulation engine
-    print("\nInitializing simulation system...")
-    engine = SimulationEngine(config)
-    
-    # Run simulation
-    if config.get('enable_animation', True) and not args.headless:
-        # Run with visualization
-        print("\nStarting simulation with visualization...")
-        visualizer = Visualizer(engine, config)
-        
-        # Save animation
-        if args.output:
-            output_file = visualizer.save_animation(
-                filename=args.output,
-                format=args.format
-            )
-        else:
-            visualizer.save_animation(format=args.format)
-    else:
-        # Run in headless mode
-        print("\nRunning simulation (headless mode)...")
-        final_stats = engine.run_simulation(config['simulation_duration'])
-    
-    # Get final statistics
-    final_stats = engine.get_final_statistics()
-    
-    # Save data
-    if data_manager:
-        data_manager.save_simulation_results(final_stats)
-        if args.report:
-            data_manager.generate_report(final_stats)
-        if args.excel:
-            data_manager.export_to_excel(final_stats)
-    
-    # Print result summary
-    print("\n" + "=" * 60)
-    print("Simulation Completed!")
-    print("=" * 60)
-    print(f"\nSimulation Results Summary:")
-    print(f"- Total revenue: ${final_stats['summary']['total_revenue']:.2f}")
-    print(f"- Total cost: ${final_stats['summary']['total_cost']:.2f}")
-    print(f"- Total profit: ${final_stats['summary']['total_profit']:.2f}")
-    print(f"- Order completion rate: {final_stats['summary']['order_completion_rate']*100:.1f}%")
-    print(f"- Vehicle utilization rate: {final_stats['summary']['vehicle_utilization_rate']*100:.1f}%")
-    print(f"- Charging station utilization rate: {final_stats['summary']['charging_utilization_rate']*100:.1f}%")
-    
-    return final_stats
-
-
-def run_simulation(config: dict, args):
-    """Main simulation runner"""
-    # Check if realtime mode is requested
-    if hasattr(args, 'realtime') and args.realtime:
-        return run_realtime_simulation(config, args)
-    else:
-        return run_traditional_simulation(config, args)
-
-
 def main():
-    """Main function"""
+    """主函数"""
     parser = argparse.ArgumentParser(
-        description='Electric Vehicle Simulation System - Simulates electric vehicle operations in cities',
+        description='EV仿真系统 - YAML配置驱动版本',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
-  # Run with default configuration (traditional simulation)
+使用方法:
+  # 使用默认配置运行
   python main.py
   
-  # Specify location and number of vehicles
-  python main.py -l "Beijing, China" -v 50
+  # 使用指定配置文件
+  python main.py -c config/examples/west_lafayette_demo.yaml
   
-  # Run in headless mode and generate report
-  python main.py --headless --save-data --report
+  # 列出所有可用配置
+  python main.py --list
   
-  # Use custom configuration file
-  python main.py -c custom_config.json
+配置文件说明:
+  所有参数都在YAML配置文件中设置，包括：
+  - 运行模式 (live/headless)
+  - 车辆数量、仿真时长
+  - 数据保存设置
+  - 可视化参数等
   
-  # Start real-time interactive visualization (NEW!)
-  python main.py --realtime
-  
-  # Real-time visualization with custom settings
-  python main.py --realtime -l "Manhattan, New York" -v 30
+  参考配置文件: config/default.yaml
         """
     )
     
-    # Basic parameters
-    parser.add_argument('-l', '--location', type=str,
-                      help='Simulation location (default: West Lafayette, IN)')
-    parser.add_argument('-v', '--vehicles', type=int,
-                      help='Number of vehicles')
-    parser.add_argument('-d', '--duration', type=int,
-                      help='Simulation duration (seconds)')
-    parser.add_argument('-c', '--config', type=str,
-                      help='Configuration file path')
-    
-    # Output parameters (only for traditional mode)
-    parser.add_argument('-o', '--output', type=str,
-                      help='Output filename (without extension)')
-    parser.add_argument('-f', '--format', choices=['html', 'mp4'],
-                      default='html', help='Animation format (default: html)')
-    
-    # Run modes
-    parser.add_argument('--headless', action='store_true',
-                      help='Headless mode (no visualization)')
-    parser.add_argument('--no-animation', action='store_true',
-                      help='Disable animation generation')
-    parser.add_argument('--realtime', action='store_true',
-                      help='Start real-time interactive visualization server (localhost:8080)')
-    
-    # Data saving (only for traditional mode)
-    parser.add_argument('--save-data', action='store_true',
-                      help='Save simulation data')
-    parser.add_argument('--report', action='store_true',
-                      help='Generate simulation report')
-    parser.add_argument('--excel', action='store_true',
-                      help='Export Excel file')
-    
-    # Debug parameters
-    parser.add_argument('--debug', action='store_true',
-                      help='Debug mode')
+    # 基本参数
+    parser.add_argument(
+        '-c', '--config', 
+        default='default.yaml',
+        help='YAML配置文件路径 (默认: default.yaml)'
+    )
+    parser.add_argument(
+        '--list', '-l',
+        action='store_true',
+        help='列出所有可用的配置文件'
+    )
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        help='启用调试模式'
+    )
     
     args = parser.parse_args()
     
-    # Validate arguments
-    if args.realtime and (args.headless or args.no_animation or args.save_data or args.report or args.excel):
-        print("Warning: Data saving options are not applicable in real-time mode")
+    # 列出配置文件
+    if args.list:
+        list_available_configs()
+        return 0
     
-    # Load configuration
-    if args.config:
-        config = load_custom_config(args.config)
-    else:
-        config = SIMULATION_CONFIG.copy()
-    
-    # Run simulation
+    # 运行仿真
     try:
-        run_simulation(config, args)
+        success = run_simulation(args.config)
+        return 0 if success else 1
     except KeyboardInterrupt:
-        print("\n\nSimulation interrupted by user")
-        sys.exit(0)
+        print("\n\n⏹️ 用户中断程序")
+        return 0
     except Exception as e:
-        print(f"\nError: {e}")
+        print(f"\n❌ 程序错误: {e}")
         if args.debug:
-            import traceback
             traceback.print_exc()
-        sys.exit(1)
-
+        return 1
 
 if __name__ == '__main__':
-    main()
+    exit(main())

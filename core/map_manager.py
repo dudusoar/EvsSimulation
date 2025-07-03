@@ -44,6 +44,7 @@ class MapManager:
         
         # Cache node positions
         self._node_positions = {}
+        self._node_positions_latlon = {}  # 添加经纬度坐标缓存
         self._cache_node_positions()
         
         # Graphics objects (for visualization)
@@ -82,12 +83,106 @@ class MapManager:
             raise Exception(f"Unable to get map for {self.location}: {str(e)}")
     
     def _cache_node_positions(self):
-        """Cache all node positions"""
+        """Cache all node positions (both projected and lat/lon)"""
         for node in self.projected_graph.nodes():
+            # 投影坐标 (x, y) - 用于计算
             self._node_positions[node] = (
                 self.projected_graph.nodes[node]['x'],
                 self.projected_graph.nodes[node]['y']
             )
+            
+            # 经纬度坐标 (lon, lat) - 用于Web地图显示
+            self._node_positions_latlon[node] = (
+                self.graph.nodes[node]['x'],  # longitude
+                self.graph.nodes[node]['y']   # latitude
+            )
+    
+    # ============= Coordinate Conversion Methods =============
+    def projected_to_latlon(self, projected_pos: Tuple[float, float]) -> Tuple[float, float]:
+        """
+        Convert projected coordinates to lat/lon coordinates
+        
+        Args:
+            projected_pos: (x, y) in projected coordinates (meters)
+            
+        Returns:
+            (longitude, latitude) in WGS84 degrees
+        """
+        try:
+            # Use OSMnx to convert projected coordinates back to lat/lon
+            import geopandas as gpd
+            from shapely.geometry import Point
+            
+            # Create point in projected CRS
+            point = Point(projected_pos[0], projected_pos[1])
+            gdf = gpd.GeoDataFrame([1], geometry=[point], crs=self.projected_graph.graph['crs'])
+            
+            # Transform to WGS84 (EPSG:4326)
+            gdf_latlon = gdf.to_crs('EPSG:4326')
+            
+            # Extract longitude and latitude
+            lon = gdf_latlon.geometry.iloc[0].x
+            lat = gdf_latlon.geometry.iloc[0].y
+            
+            return (lon, lat)
+        except:
+            # Fallback: find nearest node and use its lat/lon
+            return self.find_nearest_node_latlon(projected_pos)
+    
+    def latlon_to_projected(self, latlon_pos: Tuple[float, float]) -> Tuple[float, float]:
+        """
+        Convert lat/lon coordinates to projected coordinates
+        
+        Args:
+            latlon_pos: (longitude, latitude) in WGS84 degrees
+            
+        Returns:
+            (x, y) in projected coordinates (meters)
+        """
+        try:
+            import geopandas as gpd
+            from shapely.geometry import Point
+            
+            lon, lat = latlon_pos
+            
+            # Create point in WGS84 CRS
+            point = Point(lon, lat)
+            gdf = gpd.GeoDataFrame([1], geometry=[point], crs='EPSG:4326')
+            
+            # Transform to projected CRS
+            gdf_projected = gdf.to_crs(self.projected_graph.graph['crs'])
+            
+            # Extract x and y coordinates
+            x = gdf_projected.geometry.iloc[0].x
+            y = gdf_projected.geometry.iloc[0].y
+            
+            return (x, y)
+        except:
+            # Fallback: find nearest node and use its projected coordinates
+            return self.find_nearest_node_projected(latlon_pos)
+    
+    def find_nearest_node_latlon(self, projected_pos: Tuple[float, float]) -> Tuple[float, float]:
+        """Find nearest node's lat/lon coordinates to given projected position"""
+        min_distance = float('inf')
+        nearest_latlon = (0.0, 0.0)
+        
+        for node_id, node_proj_pos in self._node_positions.items():
+            distance = np.sqrt(
+                (projected_pos[0] - node_proj_pos[0])**2 + 
+                (projected_pos[1] - node_proj_pos[1])**2
+            )
+            if distance < min_distance:
+                min_distance = distance
+                nearest_latlon = self._node_positions_latlon[node_id]
+        
+        return nearest_latlon
+    
+    def find_nearest_node_projected(self, latlon_pos: Tuple[float, float]) -> Tuple[float, float]:
+        """Find nearest node's projected coordinates to given lat/lon position"""
+        lon, lat = latlon_pos
+        # Use OSMnx to find nearest node
+        nearest_node = ox.nearest_nodes(self.graph, lon, lat)
+        return self._node_positions.get(nearest_node, (0.0, 0.0))
     
     # ============= Node Management Methods =============
     # Test: Gets all nodes in the projected graph
@@ -112,13 +207,20 @@ class MapManager:
     # Output: (x,y) coordinate of node (Tuple) 
 
     def get_node_position(self, node_id: int) -> Tuple[float, float]:
-        """Get node position"""
+        """Get node position in projected coordinates (for calculations)"""
         return self._node_positions.get(node_id, (0.0, 0.0))
     
+<<<<<<< HEAD
     # Test: Gets nearest node to a give position
     # Input: (x,y) position (Tuple)
     # Output: Node ID (int)
 
+=======
+    def get_node_position_latlon(self, node_id: int) -> Tuple[float, float]:
+        """Get node position in lat/lon coordinates (for web maps)"""
+        return self._node_positions_latlon.get(node_id, (0.0, 0.0))
+    
+>>>>>>> master
     def find_nearest_node(self, position: Tuple[float, float]) -> int:
         """Find nearest node to given position"""
         x, y = position
@@ -366,13 +468,18 @@ class MapManager:
         self.fig, self.ax = ox.plot_graph(
             self.projected_graph,
             node_size=0,
-            edge_linewidth=0.5,
+            edge_linewidth=1.0,  # Restored to reasonable thickness
             show=show_preview,
             close=False,
             bgcolor='white',
-            edge_color='gray'
+            edge_color='darkgray',  # Changed from 'gray' to 'darkgray' for better contrast
+            figsize=(15, 12)  # Increased from (12, 10) to (15, 12) for larger map display
         )
-        self.ax.set_title(self.location)
+        self.ax.set_title(self.location, fontsize=16, fontweight='bold', pad=20)
+        
+        # Adjust subplot parameters to give more space for the map
+        self.fig.subplots_adjust(left=0.05, right=0.95, top=0.93, bottom=0.07)
+        
         return self.fig, self.ax
     
     # Test: plots the route of a path on the map 

@@ -1,0 +1,42 @@
+# EV仿真系统配置文件 - GIF演示优化版本
+# 专门用于生成引人注目的demo gif
+# 配置名称: West Lafayette 高密度演示
+
+simulation:
+  name: "West Lafayette GIF 演示 - 高密度"
+  location: "West Lafayette, Indiana, USA"  # 使用统一的测试城市
+  duration: 60.0                           # 60秒演示（系统最低要求）
+  time_step: 0.05                          # 更精细的时间步长，更流畅
+
+vehicles:
+  count: 30                                # 30辆电动车（增加10辆）
+  speed: 500.0                             # 更高速度，动画更动感
+  battery:
+    capacity: 100.0                        # 电池容量 (%)
+    charging_threshold: 35.0                # 更频繁充电，增加动态
+    consumption_rate: 1.5                  # 稍高能耗，更多充电需求
+
+orders:
+  generation_rate: 1500                    # 超高频订单生成（增加500/小时）
+  pricing:
+    base_price_per_km: 2.0                 # 基础价格 (USD/km)
+    surge_multiplier: 1.5                  # 高峰倍数
+  max_waiting_time: 300.0                  # 更短等待时间，快速匹配
+
+charging_stations:
+  count: 6                                 # 增加1个充电站
+  slots_per_station: 4                     # 每站4个充电桩
+  charging_rate: 8.0                       # 超快充电，快速周转
+  electricity_price: 0.8                   # 电价 (USD/kWh)
+
+visualization:
+  mode: live                               # 实时可视化模式
+  enable_animation: true                   # 启用动画
+  animation_fps: 30                        # 适中帧率，gif友好
+  save_animation: true                     # 保存动画
+  animation_format: "html"                 # HTML格式
+
+data:
+  save_data: false                         # 演示模式不保存数据
+  save_interval: 5.0                       # 更频繁的进度报告
+  output_dir: "simulation_output"          # 输出目录 
