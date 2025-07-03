@@ -103,7 +103,7 @@ class YAMLConfigManager:
         """加载YAML配置文件
         
         Args:
-            config_file: 配置文件名
+            config_file: 配置文件名或路径
             
         Returns:
             验证后的配置模型
@@ -113,7 +113,10 @@ class YAMLConfigManager:
             ValidationError: 配置验证失败
             yaml.YAMLError: YAML解析错误
         """
-        config_path = self.config_dir / config_file
+        # 新增：如果config_file是绝对路径或包含/，直接用
+        config_path = Path(config_file)
+        if not config_path.is_absolute() and not ("/" in config_file or "\\" in config_file):
+            config_path = self.config_dir / config_file
         
         if not config_path.exists():
             raise FileNotFoundError(f"配置文件不存在: {config_path}")
@@ -127,7 +130,7 @@ class YAMLConfigManager:
                 yaml_data = {}
             
             yaml_data['metadata'] = {
-                'config_file': config_file,
+                'config_file': str(config_file),
                 'loaded_at': datetime.now().isoformat(),
                 'file_path': str(config_path)
             }

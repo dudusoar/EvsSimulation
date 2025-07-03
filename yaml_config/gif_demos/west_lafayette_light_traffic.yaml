@@ -1,0 +1,42 @@
+# EV仿真系统配置文件 - GIF演示轻量版本
+# 用于生成轻量级流量的demo gif
+# 配置名称: West Lafayette 轻量演示
+
+simulation:
+  name: "West Lafayette GIF 演示 - 轻量流量"
+  location: "West Lafayette, Indiana, USA"
+  duration: 60.0                           # 60秒演示
+  time_step: 0.1                           # 标准时间步长
+
+vehicles:
+  count: 15                                # 15辆电动车（适中数量）
+  speed: 300.0                             # 中等速度
+  battery:
+    capacity: 100.0                        # 电池容量 (%)
+    charging_threshold: 30.0                # 标准充电阈值
+    consumption_rate: 1.0                  # 标准能耗率
+
+orders:
+  generation_rate: 800                     # 中等频率订单生成
+  pricing:
+    base_price_per_km: 2.0                 # 基础价格
+    surge_multiplier: 1.2                  # 低峰倍数
+  max_waiting_time: 450.0                  # 标准等待时间
+
+charging_stations:
+  count: 4                                 # 4个充电站
+  slots_per_station: 3                     # 每站3个充电桩
+  charging_rate: 6.0                       # 标准充电速度
+  electricity_price: 0.8                   # 电价
+
+visualization:
+  mode: live                               # 实时可视化模式
+  enable_animation: true                   # 启用动画
+  animation_fps: 30                        # 标准帧率
+  save_animation: true                     # 保存动画
+  animation_format: "html"                 # HTML格式
+
+data:
+  save_data: false                         # 演示模式不保存数据
+  save_interval: 10.0                      # 标准进度报告间隔
+  output_dir: "simulation_output"          # 输出目录 

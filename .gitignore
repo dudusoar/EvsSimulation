@@ -141,4 +141,10 @@ outputs/
 simulation_output/
 graphml_files/
 *.mp4
-*.gif 
+
+# GIF generation temporary files (but allow demo GIFs in assets/)
+assets/frames/
+*.frame
+temp_frames/
+**/frames/
+# Note: Demo GIFs in assets/ folder should be committed 
