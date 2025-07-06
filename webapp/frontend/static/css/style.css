@@ -1,0 +1,124 @@
+/* Custom styles for EV Simulation Dashboard */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Map container */
+#map {
+    border-radius: 0.375rem;
+}
+
+/* Control panel enhancements */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.card-header {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* Status indicators */
+.status-connected {
+    color: #198754 !important;
+}
+
+.status-disconnected {
+    color: #dc3545 !important;
+}
+
+.status-connecting {
+    color: #ffc107 !important;
+}
+
+/* Button states */
+.btn:disabled {
+    opacity: 0.5;
+}
+
+/* Statistics cards animations */
+.stats-card {
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Leaflet popup styles */
+.leaflet-popup-content {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.vehicle-popup {
+    min-width: 200px;
+}
+
+.vehicle-popup h6 {
+    margin-bottom: 8px;
+    color: #495057;
+}
+
+.vehicle-popup .badge {
+    font-size: 0.75em;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 0.5rem;
+    }
+    
+    #map {
+        height: 300px !important;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Chart containers */
+canvas {
+    max-height: 300px;
+}
+
+/* Speed slider styling */
+.form-range::-webkit-slider-thumb {
+    background-color: #0d6efd;
+}
+
+.form-range::-moz-range-thumb {
+    background-color: #0d6efd;
+    border: none;
+}
+
+/* Connection status animation */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Toast notifications styling */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+} 

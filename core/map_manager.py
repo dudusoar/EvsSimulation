@@ -210,14 +210,11 @@ class MapManager:
         """Get node position in projected coordinates (for calculations)"""
         return self._node_positions.get(node_id, (0.0, 0.0))
     
+<<<<<<< HEAD
     # Test: Gets nearest node to a give position
     # Input: (x,y) position (Tuple)
     # Output: Node ID (int)
 
-    def get_node_position_latlon(self, node_id: int) -> Tuple[float, float]:
-        """Get node position in lat/lon coordinates (for web maps)"""
-        return self._node_positions_latlon.get(node_id, (0.0, 0.0))
-    
     def find_nearest_node(self, position: Tuple[float, float]) -> int:
         """Find nearest node to given position"""
         x, y = position

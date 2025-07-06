@@ -15,7 +15,7 @@ cache/
 
 # Log Files
 *.log
-realtime_visualizer.log
+# Removed realtime_visualizer.log (feature removed)
 
 # Dataset Directory (optional - uncomment if you don't want to track datasets)
 datasets/
@@ -137,7 +137,14 @@ ehthumbs.db
 Thumbs.db
 
 # Simulation output files
+outputs/
 simulation_output/
 graphml_files/
 *.mp4
-*.gif 
+
+# GIF generation temporary files (but allow demo GIFs in assets/)
+assets/frames/
+*.frame
+temp_frames/
+**/frames/
+# Note: Demo GIFs in assets/ folder should be committed 

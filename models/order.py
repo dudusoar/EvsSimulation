@@ -8,6 +8,8 @@ from typing import Tuple, Optional
 import uuid
 from config.simulation_config import ORDER_STATUS
 
+# Global order counter for simple sequential IDs
+_global_order_counter = 0
 
 @dataclass
 class Order:
@@ -39,7 +41,9 @@ class Order:
     def __post_init__(self):
         """Post-initialization processing"""
         if self.order_id is None:
-            self.order_id = f"ORDER_{uuid.uuid4().hex[:8]}"
+            global _global_order_counter
+            _global_order_counter += 1
+            self.order_id = str(_global_order_counter)
     
     # ============= Status Management Methods =============
     def assign_to_vehicle(self, vehicle_id: str, current_time: float):
