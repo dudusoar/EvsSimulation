@@ -14,6 +14,7 @@ from config.simulation_config import SIMULATION_CONFIG
 from core.simulation_engine import SimulationEngine
 from visualization.visualizer import Visualizer
 from data.data_manager import DataManager
+from core.map_manager import MapManager
 
 # Import realtime visualizer (only when needed and available)
 def import_realtime_visualizer():
@@ -306,6 +307,11 @@ Examples:
             import traceback
             traceback.print_exc()
         sys.exit(1)
+
+    #mm = MapManager("Manhattan, New York, NY, USA",'datasets/maps')
+    #mm.calculate_travel_time_weights(50.0)
+    #mm.get_shortest_path_points(36,45)
+    #mm.get_all_nodes()
 
 
 if __name__ == '__main__':

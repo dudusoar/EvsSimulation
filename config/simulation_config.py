@@ -12,7 +12,7 @@ SIMULATION_CONFIG = {
     'cache_map': True,                # Whether to cache map data
     
     # Time parameters
-    'simulation_duration': 1800,      # Total simulation duration (seconds)
+    'simulation_duration': 1800,#1800      # Total simulation duration (seconds)
     'time_step': 0.1,                # Time step (seconds)
     
     # Vehicle parameters

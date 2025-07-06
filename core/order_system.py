@@ -15,6 +15,13 @@ from utils.geometry import calculate_distance
 
 class OrderSystem:
     """Order System Class"""
+
+    # Model (R): Initializes the OrderSystem class by creating a dictionary to map order ids to the order, a list for pending orders, 
+    # and stats to indentify the orders created, completed, cancelled, and total revenue. Moreover, it to generate the orders, this 
+    # function specifies the order generation rate, price/km, surge multiplier and max waiting time.
+    #
+    # Inputs: map_manager (Object of MapManager class) -> Provides map info
+    # Outputs: None
     
     def __init__(self, map_manager: MapManager, config: Dict):
         """
@@ -40,11 +47,16 @@ class OrderSystem:
         # Order generation parameters
         self.base_generation_rate = config.get('order_generation_rate', 5) / 3600  # Convert to per second
         self.base_price_per_km = config.get('base_price_per_km', 2.0)
-        self.surge_multiplier = config.get('surge_multiplier', 1.5)
+        self.surge_multiplier = config.get('surge_multiplier', 1.5) #During high traffic time
         self.max_waiting_time = config.get('max_waiting_time', 600)
         
         # Pre-generate initial orders to ensure simulation starts with orders!
         self._generate_initial_orders()
+
+    # Model (R): Generates orders that will be found at the start of the simulation. 
+    #
+    # Inputs: None
+    # Outputs: None
     
     def _generate_initial_orders(self):
         """Pre-generate initial orders to ensure simulation starts with available orders"""
@@ -69,6 +81,13 @@ class OrderSystem:
         print(f"Pre-generated {orders_generated} initial orders")
     
     # ============= Order Generation Methods =============
+
+    # Model (R): Generates orders additional to the initialized orders. Creates an expected number of orders based on the time step
+    # to then draw an int using a poisson distribution 
+    #
+    # Input: current_time (float), dt(float) -> time step 
+    # Output: new_orders (List[Orders])
+
     def generate_orders(self, current_time: float, dt: float) -> List[Order]:
         """
         Generate new orders based on current time and demand
@@ -95,11 +114,17 @@ class OrderSystem:
         
         return new_orders
     
+    # Model: Creates a random order by drawing two random nodes to traverse across from the map and specifies order details:
+    # pickup node and pos, dropoff node and pos, distance, current time, surge multiplier, and finally calculates total price.
+    #
+    # Input: current_time (float)
+    # Output: order (object of Order Class) or None
+    
     def _create_random_order(self, current_time: float) -> Optional[Order]:
         """Create a random order"""
         # Randomly select origin and destination
         nodes = self.map_manager.get_random_nodes(2)
-        if len(nodes) < 2:
+        if len(nodes) < 2: #if less than 2 nodes in map, not possible to create an order
             return None
         
         pickup_node = nodes[0]
@@ -124,13 +149,18 @@ class OrderSystem:
             dropoff_position=dropoff_pos,
             creation_time=current_time,
             estimated_distance=distance_km,
-            surge_multiplier=self._calculate_surge_multiplier(current_time)
+            surge_multiplier=self._calculate_surge_multiplier(current_time) #higher price for high traffic time
         )
         
         # Calculate price
         order.calculate_price(self.base_price_per_km)
         
         return order
+    
+    # Model (R): Calculates how much more the bas price is based on the time
+    # 
+    # Input: current_time(float)
+    # Output: self.surge_multiplier(float) or 1.0
     
     def _calculate_surge_multiplier(self, current_time: float) -> float:
         """
@@ -147,6 +177,12 @@ class OrderSystem:
         return 1.0
     
     # ============= Order Assignment Methods =============
+
+    # Test: assigns the order to an EV by getting the vehicle closest by distance to the pick up point. No assignmnent if the order
+    # does not have an id in the orders list, not pending, or <0.5 km
+    #
+    # Inputs: order_id (str), vehicle (object of Vehicle Class), current_time (float)
+    # Outputs: Whether or not the order was successfully assigned to an EV (bool)
     def assign_order_to_vehicle(self, order_id: str, vehicle: Vehicle, current_time: float) -> bool:
         """
         Assign order to vehicle
@@ -165,7 +201,7 @@ class OrderSystem:
         order = self.orders[order_id]
         
         # Check order status
-        if not order.is_pending():
+        if not order.is_pending(): #if not pending then no need to assign
             return False
         
         # Assign order
@@ -196,6 +232,8 @@ class OrderSystem:
         vehicle.update_status(VEHICLE_STATUS['TO_PICKUP'])
         
         return True
+    
+    
     
     def find_best_vehicle_for_order(self, order_id: str, available_vehicles: List[Vehicle]) -> Optional[Vehicle]:
         """

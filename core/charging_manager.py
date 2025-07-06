@@ -351,7 +351,7 @@ class ChargingManager:
             'total_vehicles_served': total_vehicles_served,
             'avg_revenue_per_station': total_revenue / max(1, total_stations)
         }
-    
+
     # Test: Gets a list of all charging stations
     # Input: None
     # Output: List of all charging stations (List)
