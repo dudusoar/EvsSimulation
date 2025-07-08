@@ -44,8 +44,8 @@ DEFAULT_CONFIG = {
     'cache_map': True,                # Whether to cache map data
     
     # Time parameters
-    'simulation_duration': 1800,      # Total simulation duration (seconds)
-    'time_step': 0.1,                # Time step (seconds)
+    'simulation_duration': 100,     # Total simulation duration (seconds)
+    'time_step': 1.0, #0.1                # Time step (seconds)
     
     # Vehicle parameters
     'num_vehicles': 20,               # Number of vehicles

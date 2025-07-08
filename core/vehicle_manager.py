@@ -88,6 +88,13 @@ class VehicleManager:
     def _update_vehicle_movement(self, vehicle: Vehicle, dt: float):
         """Update vehicle movement"""
         # Check if there's a path
+        dt_hours = dt / 3600  # Convert seconds to hours
+    
+        #-------------NEW FIX (consistent units?)
+        # Calculate movement based on vehicle speed (km/h)
+        distance_km = self.vehicle_speed * dt_hours  # km
+        distance_m = distance_km * 1000  # meters
+        #----------------------------------------
         if not vehicle.path_points:
             return
         

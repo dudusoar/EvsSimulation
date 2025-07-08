@@ -215,15 +215,17 @@ class OrderSystem:
         min_score = float('inf')
         
         for vehicle in available_vehicles:
+            #---------------------------
+            #uses time instead 
             # Calculate distance to pickup point
-            distance = self.map_manager.calculate_route_distance(
+            time = self.map_manager.calculate_route_time(
                 vehicle.current_node, order.pickup_node
             )
             
             # Calculate score (considering distance and battery)
             # Vehicles with insufficient battery get higher score (less priority)
             battery_penalty = 0 if vehicle.battery_percentage > 50 else 1000
-            score = distance + battery_penalty
+            score = time + battery_penalty
             
             if score < min_score:
                 min_score = score

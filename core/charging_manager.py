@@ -97,14 +97,16 @@ class ChargingManager:
             if not station.has_available_slot():
                 continue
             
-            # Calculate distance
-            distance = self.map_manager.calculate_route_distance(
+            #----------------------------
+            # uses time now instead of distance
+            # Calculate time
+            time = self.map_manager.calculate_route_time(
                 vehicle.current_node, station.node_id
             )
             
             # Calculate score: distance + queue penalty
             utilization_penalty = station.get_utilization_rate() * 1000
-            score = distance + utilization_penalty
+            score = time + utilization_penalty
             
             if score < min_score:
                 min_score = score

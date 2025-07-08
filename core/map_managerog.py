@@ -36,73 +36,15 @@ class MapManager:
         self.graph = self._load_graph()
         self.projected_graph = ox.project_graph(self.graph)
         
-        #Add travel time as edge weights based on maxspeed data
-        self._add_travel_time_weights()
-        
         # Cache node positions
         self._node_positions = {}
-        self._node_positions_latlon = {}  # Add longitude and latitude coordinate cache
+        self._node_positions_latlon = {}  # 添加经纬度坐标缓存
         self._cache_node_positions()
         
         # Graphics objects (for visualization)
         self.fig = None
         self.ax = None
-
-    # ============= Add travel time weights =============
-
-    def _add_travel_time_weights(self):
-        """ Add travel time weights based on maxspeed data"""
-
-        # Set default speed (km/h) if maxspeed is not available
-        default_speed = 50
-
-        for u, v, k, data in self.projected_graph.edges(keys=True, data=True):
-            maxspeed = data.get('maxspeed',None)
-
-            if maxspeed is None:
-                speed = default_speed
-            
-            elif isinstance(maxspeed,list):
-                #take the first speed if multiple listed
-                speed = self._parse_speed(maxspeed[0])
-
-            else:
-                speed = self._parse_speed(maxspeed)
-
-            length = data['length'] 
-
-            speed_mps = speed * 1000/3600
-
-            travel_time = length / speed_mps
-            
-            #Add travel time as edge weight in seconds
-
-            self.projected_graph[u][v][k]['time'] = travel_time
-
-    def _parse_speed(self, speed_str: str) -> float:
-        """ Parse speed string from OSM into numeric value (km/h)"""
-        try:
-            if isinstance(speed_str, (int,float)):
-                return float(speed_str)
-            
-            speed_str= str(speed_str).lower().strip()
-
-            if  'mph' in speed_str:
-                speed_str = speed_str.replace('mph', '').strip()
-                speed_kmh = float(speed_str) * 1.60934  # convert mph to km/h
-                return speed_kmh
-            
-            elif 'kmh' in speed_str or 'km/h' in speed_str:
-                speed_str = speed_str.replace('kmh', '').replace('km/h', '').strip()
-                return float(speed_str)
-            
-            else:
-                # Assume km/h if no unit specified
-                return float(speed_str)
-            
-        except(ValueError,AttributeError):
-            return 50
-        
+    
     # ============= Map Loading Methods =============
     def _load_graph(self) -> nx.MultiDiGraph:
         """Load map graph"""
@@ -263,7 +205,7 @@ class MapManager:
                 self.projected_graph,
                 origin,
                 destination,
-                weight='time' #change to time
+                weight='length'
             )
         except nx.NetworkXNoPath:
             return []
@@ -284,7 +226,7 @@ class MapManager:
             edge_data = self.projected_graph.get_edge_data(u, v)
             if edge_data:
                 # Select shortest edge
-                edge = min(edge_data.values(), key=lambda x: x.get('time', float('inf'))) #change to time 
+                edge = min(edge_data.values(), key=lambda x: x.get('length', float('inf')))
                 
                 # Check if detailed geometry information exists
                 if 'geometry' in edge:
@@ -299,37 +241,17 @@ class MapManager:
         # Decompose into continuous path points
         return decompose_path(path_lines)
     
-    def calculate_route_time(self, origin: int, destination: int) -> float:
+    def calculate_route_distance(self, origin: int, destination: int) -> float:
         """Calculate route distance (meters)"""
         try:
             return nx.shortest_path_length(
                 self.projected_graph,
                 origin,
                 destination,
-                weight='time' #change to time
+                weight='length'
             )
         except nx.NetworkXNoPath:
             return float('inf')
-        
-    def calculate_route_distance(self, origin: int, destination: int) -> float:
-        """Calculate the total distance of a path given as a list of nodes."""
-        
-        path_nodes = self.get_shortest_path_nodes(origin,destination)
-
-        if not path_nodes:
-            return 0.0
-        
-        total_distance = 0.0
-    
-        for u, v in zip(path_nodes[:-1], path_nodes[1:]):
-            edge_data = self.projected_graph.get_edge_data(u, v)
-        
-            if edge_data:
-            # Get the shortest edge (minimum time, but we extract length)
-                shortest_edge = min(edge_data.values(), key=lambda x: x.get('time', float('inf')))
-                total_distance += shortest_edge.get('length', 0.0)
-    
-        return total_distance
     
     # ============= Charging Station Related Methods =============
     def select_charging_station_nodes(self, n: int) -> List[int]:
