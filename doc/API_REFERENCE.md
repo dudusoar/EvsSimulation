@@ -470,6 +470,7 @@ class MapManager:
     def get_shortest_path_nodes(self, origin: int, destination: int) -> List[int]
     def get_shortest_path_points(self, origin: int, destination: int) -> List[Tuple[float, float]]
     def calculate_route_distance(self, origin: int, destination: int) -> float
+    def calculate_route_time(self, origin: int, destination: int) -> float
     def select_charging_station_nodes(self, n: int) -> List[int]
 ```
 
